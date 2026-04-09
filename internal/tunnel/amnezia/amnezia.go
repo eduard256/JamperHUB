@@ -1,6 +1,10 @@
 package amnezia
 
 import (
+	"path/filepath"
+
+	"github.com/eduard256/jamperhub/pkg/amnezia"
+	"github.com/eduard256/jamperhub/pkg/config"
 	"github.com/eduard256/jamperhub/pkg/tunnel"
 )
 
@@ -19,30 +23,39 @@ DNS = 1.1.1.1
 PublicKey =
 Endpoint = :51820
 AllowedIPs = 0.0.0.0/0`,
-	}, func(id, configData string) tunnel.Client {
-		return &client{id: id, configData: configData}
-	})
+	}, factory)
 }
 
-// client implements tunnel.Client for AmneziaWG
-type client struct {
-	id         string
-	configData string
-	running    bool
+func factory(id, configData string) tunnel.Client {
+	binDir := filepath.Join(config.DataPath(), "bin")
+	binPath := filepath.Join(binDir, "amneziawg-go")
+
+	client, err := amnezia.NewClient(id, binPath, configData)
+	if err != nil {
+		// return a dead client that reports the error
+		return &errClient{err: err}
+	}
+	return &wrapper{client: client}
 }
 
-func (c *client) Start() error {
-	// TODO: exec amneziawg-go, configure tun interface
-	c.running = true
-	return nil
+// wrapper adapts amnezia.Client to tunnel.Client interface
+type wrapper struct {
+	client *amnezia.Client
 }
 
-func (c *client) Stop() error {
-	// TODO: kill amneziawg-go process, remove tun
-	c.running = false
-	return nil
+func (w *wrapper) Start() error       { return w.client.Start() }
+func (w *wrapper) Stop() error        { return w.client.Stop() }
+func (w *wrapper) Running() bool      { return w.client.Running() }
+func (w *wrapper) Interface() string  { return w.client.Interface() }
+func (w *wrapper) Mode() tunnel.Mode  { return tunnel.ModeTUN }
+
+// errClient is returned when config parsing fails
+type errClient struct {
+	err error
 }
 
-func (c *client) Running() bool { return c.running }
-func (c *client) Interface() string { return "awg-" + c.id }
-func (c *client) Mode() tunnel.Mode { return tunnel.ModeTUN }
+func (e *errClient) Start() error       { return e.err }
+func (e *errClient) Stop() error        { return nil }
+func (e *errClient) Running() bool      { return false }
+func (e *errClient) Interface() string  { return "" }
+func (e *errClient) Mode() tunnel.Mode  { return tunnel.ModeTUN }

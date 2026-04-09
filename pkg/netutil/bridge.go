@@ -1,9 +1,6 @@
 package netutil
 
-import (
-	"fmt"
-	"os/exec"
-)
+import "fmt"
 
 // CreateBridge creates a Linux bridge interface
 func CreateBridge(name string) error {
@@ -23,14 +20,6 @@ func DeleteBridge(name string) error {
 	}
 	if err := run("ip", "link", "del", name); err != nil {
 		return fmt.Errorf("delete bridge %s: %w", name, err)
-	}
-	return nil
-}
-
-func run(name string, args ...string) error {
-	out, err := exec.Command(name, args...).CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("%s %v: %s: %w", name, args, out, err)
 	}
 	return nil
 }

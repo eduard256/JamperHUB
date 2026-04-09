@@ -1,7 +1,18 @@
 package xray
 
 import (
+	"path/filepath"
+	"sync"
+
+	"github.com/eduard256/jamperhub/pkg/config"
+	"github.com/eduard256/jamperhub/pkg/netutil"
 	"github.com/eduard256/jamperhub/pkg/tunnel"
+	"github.com/eduard256/jamperhub/pkg/xray"
+)
+
+var (
+	mu       sync.Mutex
+	nextPort = 10808 // auto-increment SOCKS5 ports
 )
 
 func Init() {
@@ -42,53 +53,49 @@ func Init() {
     }
   }]
 }`,
-	}, func(id, configData string) tunnel.Client {
-		return &client{id: id, configData: configData}
-	})
+	}, factory)
 }
 
-// client implements tunnel.Client for Xray
-type client struct {
-	id         string
-	configData string
-	running    bool
-	port       int // SOCKS5 listen port
-}
+func factory(id, configData string) tunnel.Client {
+	binDir := filepath.Join(config.DataPath(), "bin")
+	xrayBin := filepath.Join(binDir, "xray")
+	tun2Bin := filepath.Join(binDir, "tun2socks")
 
-func (c *client) Start() error {
-	// TODO: write config to temp file, exec xray, start tun2socks
-	c.running = true
-	return nil
-}
+	port := allocPort()
 
-func (c *client) Stop() error {
-	// TODO: kill xray + tun2socks processes
-	c.running = false
-	return nil
-}
-
-func (c *client) Running() bool { return c.running }
-
-func (c *client) Interface() string {
-	if c.port == 0 {
-		return "socks5://127.0.0.1:10808"
+	client, err := xray.NewClient(id, xrayBin, tun2Bin, config.DataPath(), configData, port, netutil.FwMark())
+	if err != nil {
+		return &errClient{err: err}
 	}
-	return "socks5://127.0.0.1:" + itoa(c.port)
+	return &wrapper{client: client}
 }
 
-func (c *client) Mode() tunnel.Mode { return tunnel.ModeProxy }
-
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	b := make([]byte, 0, 5)
-	for n > 0 {
-		b = append(b, byte('0'+n%10))
-		n /= 10
-	}
-	for i, j := 0, len(b)-1; i < j; i, j = i+1, j-1 {
-		b[i], b[j] = b[j], b[i]
-	}
-	return string(b)
+func allocPort() int {
+	mu.Lock()
+	defer mu.Unlock()
+	port := nextPort
+	nextPort++
+	return port
 }
+
+// wrapper adapts xray.Client to tunnel.Client interface
+type wrapper struct {
+	client *xray.Client
+}
+
+func (w *wrapper) Start() error      { return w.client.Start() }
+func (w *wrapper) Stop() error       { return w.client.Stop() }
+func (w *wrapper) Running() bool     { return w.client.Running() }
+func (w *wrapper) Interface() string { return w.client.Interface() }
+func (w *wrapper) Mode() tunnel.Mode { return tunnel.ModeProxy }
+
+// errClient is returned when config parsing fails
+type errClient struct {
+	err error
+}
+
+func (e *errClient) Start() error      { return e.err }
+func (e *errClient) Stop() error       { return nil }
+func (e *errClient) Running() bool     { return false }
+func (e *errClient) Interface() string { return "" }
+func (e *errClient) Mode() tunnel.Mode { return tunnel.ModeProxy }
