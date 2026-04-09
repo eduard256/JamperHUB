@@ -414,6 +414,16 @@ body::after {
 
 .tunnel-card:hover { border-color: var(--border-subtle); }
 
+.tunnel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .tunnel-grid { grid-template-columns: 1fr; }
+}
+
 .tunnel-info { display: flex; flex-direction: column; gap: 2px; }
 
 .tunnel-name {
@@ -765,7 +775,9 @@ body::after {
   overflow: hidden;
   vertical-align: bottom;
   opacity: 0;
-  transition: max-width 0.02s, opacity 0.02s;
+  transition:
+    max-width 0.06s ease-in calc((4 - var(--i)) * 0.03s),
+    opacity 0.05s ease-in calc((4 - var(--i)) * 0.03s);
 }
 
 .sidebar:hover .sl-ch {
@@ -782,7 +794,7 @@ body::after {
   overflow: hidden;
   vertical-align: bottom;
   opacity: 0;
-  transition: max-width 0.02s, opacity 0.02s;
+  transition: max-width 0.06s ease-in, opacity 0.05s ease-in;
 }
 
 .sidebar:hover .sl-ub {
@@ -1108,13 +1120,113 @@ textarea.input { resize: vertical; min-height: 280px; line-height: 1.6; }
    CHARTS GRID (2 per row desktop, 1 mobile)
    ============================================ */
 .charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
+/* ============================================
+   CHART + STATS LAYOUT
+   ============================================ */
+/* chart layout: stats LEFT, chart RIGHT */
+.layout-stats-left {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* chart layout: chart LEFT, stats RIGHT */
+.layout-stats-right {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* chart layout: chart TOP, stats BOTTOM as horizontal row */
+.layout-stats-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.stat-cell {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.stat-cell-label {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.stat-cell-val {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-bright);
+}
+
 @media (max-width: 768px) {
-  .charts-grid { grid-template-columns: 1fr; }
+  .layout-stats-left,
+  .layout-stats-right { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.chart-stats {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.chart-stats-title {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.chart-stats-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-stats-row:last-child {
+  border-bottom: none;
+}
+
+.chart-stats-label {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.chart-stats-val {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-bright);
 }
 
 /* ============================================
@@ -1199,32 +1311,9 @@ textarea.input { resize: vertical; min-height: 280px; line-height: 1.6; }
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<nav class="sidebar">
-  <div class="sidebar-logo"><span>J</span><span class="sl-ch" style="--i:0">a</span><span class="sl-ch" style="--i:1">m</span><span class="sl-ch" style="--i:2">p</span><span class="sl-ch" style="--i:3">e</span><span class="sl-ch" style="--i:4">r</span><span class="logo-hub">H</span><span class="sl-ub logo-hub">UB</span></div>
-  <a class="sidebar-nav-item active">
-    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-    <span>Dashboard</span>
-  </a>
-  <a class="sidebar-nav-item">
-    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    <span>Tunnels</span>
-  </a>
-  <a class="sidebar-nav-item">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9c.03-.64-.36-1.22-.93-1.52l-.06-.06a2 2 0 112.83-2.83l.06.06c.42.42 1 .56 1.52.43.53-.14.97-.55 1.1-1.08V3a2 2 0 014 0v.09c.13.53.57.94 1.1 1.08.52.13 1.1-.01 1.52-.43l.06-.06a2 2 0 112.83 2.83l-.06.06c-.57.3-.96.88-.93 1.52A1.65 1.65 0 0019.51 9H21a2 2 0 010 4h-.09c-.53.13-.94.57-1.08 1.1-.13.52.01 1.1.43 1.52z"/></svg>
-    <span>Settings</span>
-  </a>
-  <a class="sidebar-nav-item">
-    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    <span>Logs</span>
-  </a>
-  <div class="sidebar-bottom">
-    <div class="pulse-dot"></div>
-  </div>
-</nav>
 
 <!-- PAGE -->
-<div class="ds-page" style="margin-right: 82px;">
+<div class="ds-page">
 
   <!-- LOGO -->
   <section class="ds-section">
@@ -1327,7 +1416,7 @@ textarea.input { resize: vertical; min-height: 280px; line-height: 1.6; }
   <!-- TUNNEL CARDS -->
   <section class="ds-section">
     <div class="ds-section-title">Tunnel Cards</div>
-    <div style="display:flex;flex-direction:column;gap:8px;max-width:500px;">
+    <div class="tunnel-grid">
       <div class="tunnel-card active">
         <div class="tunnel-info">
           <div class="tunnel-name">Amnezia WG v2</div>
@@ -1397,16 +1486,16 @@ textarea.input { resize: vertical; min-height: 280px; line-height: 1.6; }
   <!-- NETWORK STATUS -->
   <section class="ds-section">
     <div class="ds-section-title">Network Status</div>
-    <div class="net-status" style="max-width:700px;">
-      <div class="net-status-item"><div class="net-dot"></div><span>enp6s18</span></div>
-      <span class="net-sep">/</span>
-      <span>10.0.1.101</span>
-      <span class="net-sep">/</span>
-      <span>gw 10.0.1.1</span>
-      <span class="net-sep">&#8594;</span>
-      <div class="net-status-item"><div class="net-dot"></div><span>enp6s19</span></div>
-      <span class="net-sep">/</span>
-      <span>198.18.0.1/24</span>
+    <div style="max-width:500px;">
+      <table class="leases-table">
+        <tbody>
+          <tr><td>Input</td><td>enp6s18</td><td>10.0.1.101/24</td></tr>
+          <tr><td>Gateway</td><td></td><td>10.0.1.1</td></tr>
+          <tr><td>Output</td><td>enp6s19</td><td>198.18.0.1/24</td></tr>
+          <tr><td>Subnet</td><td></td><td>198.18.0.0/24</td></tr>
+          <tr><td>Internet</td><td></td><td style="color:var(--status-active-text)">connected</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -1506,13 +1595,24 @@ PublicKey = xyz789...</textarea>
   <!-- CHART: TOTAL TRAFFIC -->
   <section class="ds-section">
     <div class="ds-section-title">Chart - Total Traffic</div>
-    <div class="chart-container">
-      <div class="chart-title">Traffic volume</div>
-      <div class="chart-period">
-        <button class="chart-period-btn active">24h</button>
-        <button class="chart-period-btn">7d</button>
+    <div class="layout-stats-right">
+      <div class="chart-container">
+        <div class="chart-title">Traffic volume</div>
+        <div class="chart-period">
+          <button class="chart-period-btn active">24h</button>
+          <button class="chart-period-btn">7d</button>
+        </div>
+        <div id="chart-traffic"></div>
       </div>
-      <div id="chart-traffic"></div>
+      <div class="chart-stats">
+        <div class="chart-stats-title">Traffic summary</div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Total In</span><span class="chart-stats-val">1.2 GB</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Total Out</span><span class="chart-stats-val">94.5 MB</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Peak In</span><span class="chart-stats-val">48.2 MB/s</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Peak Out</span><span class="chart-stats-val">4.8 MB/s</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Avg In</span><span class="chart-stats-val">12.6 MB/s</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Avg Out</span><span class="chart-stats-val">1.1 MB/s</span></div>
+      </div>
     </div>
   </section>
 
@@ -1680,21 +1780,19 @@ function renderStability(container) {
   var w = container.clientWidth;
   var h = 60;
   var segments = [
-    { pct: 0.30, state: 'ok', label: 'Amnezia', proto: 'amnezia' },
-    { pct: 0.01, state: 'failover', label: '', proto: null },
-    { pct: 0.25, state: 'ok', label: 'Xray', proto: 'xray' },
-    { pct: 0.03, state: 'no_internet', label: '', proto: null },
-    { pct: 0.01, state: 'failover', label: '', proto: null },
-    { pct: 0.15, state: 'ok', label: 'OpenVPN', proto: 'openvpn' },
-    { pct: 0.01, state: 'failover', label: '', proto: null },
-    { pct: 0.24, state: 'ok', label: 'Amnezia', proto: 'amnezia' }
+    { pct: 0.30, label: 'Amnezia', proto: 'amnezia' },
+    { pct: 0.01, label: '', proto: null },
+    { pct: 0.25, label: 'Xray', proto: 'xray' },
+    { pct: 0.05, label: '', proto: null },
+    { pct: 0.01, label: '', proto: null },
+    { pct: 0.15, label: 'OpenVPN', proto: 'openvpn' },
+    { pct: 0.01, label: '', proto: null },
+    { pct: 0.22, label: 'Amnezia', proto: 'amnezia' }
   ];
-  var fills = {
-    ok: '#1a2e1a', failover: '#2a2a30', no_internet: '#2e1a1a',
+  var protoFills = {
     amnezia: 'rgba(90,154,90,0.15)', xray: 'rgba(122,138,170,0.15)', openvpn: 'rgba(170,138,90,0.15)'
   };
-  var strokes = {
-    ok: '#2a4a2a', failover: '#4a4a52', no_internet: '#4a2a2a',
+  var protoStrokes = {
     amnezia: '#5a9a5a', xray: '#7a8aaa', openvpn: '#aa8a5a'
   };
 
@@ -1707,47 +1805,101 @@ function renderStability(container) {
   for (var i = 0; i < segments.length; i++) {
     var seg = segments[i];
     var sw = seg.pct * w;
-    var fillColor = seg.proto ? fills[seg.proto] : fills[seg.state];
-    var strokeColor = seg.proto ? strokes[seg.proto] : strokes[seg.state];
-    var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', x); rect.setAttribute('y', 10);
-    rect.setAttribute('width', sw); rect.setAttribute('height', 30);
-    rect.setAttribute('rx', 3);
-    rect.setAttribute('fill', fillColor);
-    rect.setAttribute('stroke', strokeColor);
-    rect.setAttribute('stroke-width', 1);
-    svg.appendChild(rect);
+    if (seg.proto) {
+      var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x); rect.setAttribute('y', 10);
+      rect.setAttribute('width', sw); rect.setAttribute('height', 30);
+      rect.setAttribute('rx', 3);
+      rect.setAttribute('fill', protoFills[seg.proto]);
+      rect.setAttribute('stroke', protoStrokes[seg.proto]);
+      rect.setAttribute('stroke-width', 1);
+      svg.appendChild(rect);
 
-    if (seg.label && sw > 40) {
-      var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      txt.setAttribute('x', x + sw / 2); txt.setAttribute('y', 30);
-      txt.setAttribute('text-anchor', 'middle');
-      txt.setAttribute('font-family', 'Martian Mono');
-      txt.setAttribute('font-size', '8');
-      txt.setAttribute('font-weight', '300');
-      txt.setAttribute('fill', strokeColor);
-      txt.textContent = seg.label;
-      svg.appendChild(txt);
+      if (seg.label && sw > 40) {
+        var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', x + sw / 2); txt.setAttribute('y', 30);
+        txt.setAttribute('text-anchor', 'middle');
+        txt.setAttribute('font-family', 'Martian Mono');
+        txt.setAttribute('font-size', '8');
+        txt.setAttribute('font-weight', '300');
+        txt.setAttribute('fill', protoStrokes[seg.proto]);
+        txt.textContent = seg.label;
+        svg.appendChild(txt);
+      }
     }
     x += sw;
   }
 
-  var t1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  t1.setAttribute('x', 0); t1.setAttribute('y', 56);
-  t1.setAttribute('font-family', 'Martian Mono'); t1.setAttribute('font-size', '8');
-  t1.setAttribute('font-weight', '300'); t1.setAttribute('fill', '#555550');
-  t1.textContent = '00:00';
-  svg.appendChild(t1);
+  // time labels every ~40px
+  var nowTs = Date.now();
+  var startTs = nowTs - 24 * 60 * 60 * 1000;
+  var step = 40;
+  for (var tx = 0; tx <= w; tx += step) {
+    var pct = tx / w;
+    var d = new Date(startTs + pct * 24 * 60 * 60 * 1000);
+    var label = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    if (tx >= w - 20) label = 'now';
+    var anchor = tx === 0 ? 'start' : (tx >= w - 20 ? 'end' : 'middle');
+    var tl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    tl.setAttribute('x', tx); tl.setAttribute('y', 56);
+    tl.setAttribute('text-anchor', anchor);
+    tl.setAttribute('font-family', 'Martian Mono'); tl.setAttribute('font-size', '7');
+    tl.setAttribute('font-weight', '300'); tl.setAttribute('fill', '#555550');
+    tl.textContent = label;
+    svg.appendChild(tl);
+  }
 
-  var t2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  t2.setAttribute('x', w); t2.setAttribute('y', 56);
-  t2.setAttribute('text-anchor', 'end');
-  t2.setAttribute('font-family', 'Martian Mono'); t2.setAttribute('font-size', '8');
-  t2.setAttribute('font-weight', '300'); t2.setAttribute('fill', '#555550');
-  t2.textContent = 'now';
-  svg.appendChild(t2);
-
+  container.style.position = 'relative';
   container.appendChild(svg);
+
+  // cursor line
+  var cursorLine = document.createElement('div');
+  cursorLine.style.cssText = 'position:absolute;top:10px;width:1px;height:30px;background:#555550;pointer-events:none;display:none;z-index:2;';
+  container.appendChild(cursorLine);
+
+  // time tooltip
+  var timeTip = document.createElement('div');
+  timeTip.style.cssText = 'position:absolute;top:0;padding:2px 6px;background:#222226;border:1px solid #2c2c32;border-radius:4px;font-family:Martian Mono;font-size:0.55rem;font-weight:300;color:#e3e3de;pointer-events:none;display:none;z-index:3;white-space:nowrap;transform:translateX(-50%);';
+  container.appendChild(timeTip);
+
+  // mock: 24h range ending now
+  var nowMs = Date.now();
+  var startMs = nowMs - 24 * 60 * 60 * 1000;
+
+  container.addEventListener('mousemove', function(e) {
+    var rect = container.getBoundingClientRect();
+    var px = e.clientX - rect.left;
+    var pct = px / w;
+    if (pct < 0 || pct > 1) return;
+
+    cursorLine.style.left = px + 'px';
+    cursorLine.style.display = 'block';
+
+    var ts = new Date(startMs + pct * 24 * 60 * 60 * 1000);
+    var hh = String(ts.getHours()).padStart(2, '0');
+    var mm = String(ts.getMinutes()).padStart(2, '0');
+    timeTip.textContent = hh + ':' + mm;
+    timeTip.style.left = px + 'px';
+    timeTip.style.display = 'block';
+
+    // find which segment cursor is in
+    var cumX = 0;
+    for (var i = 0; i < segments.length; i++) {
+      var segW = segments[i].pct * w;
+      if (px >= cumX && px < cumX + segW) {
+        if (segments[i].proto) {
+          timeTip.textContent = hh + ':' + mm + '  ' + segments[i].label;
+        }
+        break;
+      }
+      cumX += segW;
+    }
+  });
+
+  container.addEventListener('mouseleave', function() {
+    cursorLine.style.display = 'none';
+    timeTip.style.display = 'none';
+  });
 }
 
 // ---- UPLOT SHARED OPTIONS ----
@@ -1855,6 +2007,8 @@ document.addEventListener('DOMContentLoaded', function() {
   renderArcGauge(gRow, 57.8, 100, 'Mbps');
   renderArcGauge(gRow, 43.0, 100, 'Mbps');
   renderArcGauge(gRow, 12.5, 100, 'Mbps');
+  renderArcGauge(gRow, 78.2, 100, 'Mbps');
+  renderArcGauge(gRow, 33.6, 100, 'Mbps');
 
   // Stability
   renderStability(document.getElementById('chart-stability'));
@@ -1878,60 +2032,133 @@ document.addEventListener('DOMContentLoaded', function() {
     { name: 'Backup OpenVPN', latBase: 240, latVar: 100, spdBase: 20, spdVar: 20 }
   ];
 
-  // ---- HELPER: build per-tunnel chart card ----
-  function buildChartCard(parent, t, suffix, seriesOpts, data) {
-    var c = tunnelColor(t.name);
+  // ---- HELPERS: stats computations ----
+  function arrMin(a) { var m = a[0]; for (var i = 1; i < a.length; i++) if (a[i] < m) m = a[i]; return m; }
+  function arrMax(a) { var m = a[0]; for (var i = 1; i < a.length; i++) if (a[i] > m) m = a[i]; return m; }
+  function arrAvg(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s / a.length; }
+
+  // ---- HELPER: build chart container with title dot ----
+  function makeChartBox(t, suffix, c) {
     var container = document.createElement('div');
     container.className = 'chart-container';
-
     var title = document.createElement('div');
     title.className = 'chart-title';
     title.style.display = 'flex';
     title.style.alignItems = 'center';
     title.style.gap = '8px';
-
     var dot = document.createElement('span');
     dot.style.cssText = 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + c.stroke + ';box-shadow:0 0 4px ' + c.stroke;
     title.appendChild(dot);
     title.appendChild(document.createTextNode(t.name + ' / ' + suffix));
     container.appendChild(title);
-
     var chartDiv = document.createElement('div');
     container.appendChild(chartDiv);
-    parent.appendChild(container);
+    return { container: container, chartDiv: chartDiv };
+  }
 
-    // defer uPlot init until element has layout width
+  // ---- HELPER: vertical stats card ----
+  function makeStatsVertical(rows) {
+    var stats = document.createElement('div');
+    stats.className = 'chart-stats';
+    for (var i = 0; i < rows.length; i++) {
+      var row = document.createElement('div');
+      row.className = 'chart-stats-row';
+      var lbl = document.createElement('span');
+      lbl.className = 'chart-stats-label';
+      lbl.textContent = rows[i][0];
+      var val = document.createElement('span');
+      val.className = 'chart-stats-val';
+      val.textContent = rows[i][1];
+      row.appendChild(lbl);
+      row.appendChild(val);
+      stats.appendChild(row);
+    }
+    return stats;
+  }
+
+  // ---- HELPER: horizontal stats row (4 cells) ----
+  function makeStatsHorizontal(rows) {
+    var grid = document.createElement('div');
+    grid.className = 'stats-row';
+    for (var i = 0; i < rows.length; i++) {
+      var cell = document.createElement('div');
+      cell.className = 'stat-cell';
+      var lbl = document.createElement('div');
+      lbl.className = 'stat-cell-label';
+      lbl.textContent = rows[i][0];
+      var val = document.createElement('div');
+      val.className = 'stat-cell-val';
+      val.textContent = rows[i][1];
+      cell.appendChild(lbl);
+      cell.appendChild(val);
+      grid.appendChild(cell);
+    }
+    return grid;
+  }
+
+  // ---- HELPER: init uPlot deferred ----
+  function initChart(container, chartDiv, seriesOpts, data, height) {
     requestAnimationFrame(function() {
       var w = container.clientWidth - 42;
       if (w < 100) w = 300;
       var opts = baseOpts(w);
-      opts.height = 160;
-      opts.series = [{}, seriesOpts(c)];
+      opts.height = height || 160;
+      opts.series = [{}, seriesOpts];
       new uPlot(opts, data, chartDiv);
     });
   }
 
-  // ---- PER-TUNNEL LATENCY CHARTS ----
+  // ---- PER-TUNNEL LATENCY: layout = stats LEFT, chart RIGHT ----
   var latRow = document.getElementById('charts-latency');
   mockTunnels.forEach(function(t) {
+    var c = tunnelColor(t.name);
     var times = mockTime(60, 30);
     var vals = mockValues(60, t.latBase, t.latVar);
-    buildChartCard(latRow, t, 'latency', function(c) {
-      return { label: t.name, stroke: c.stroke, width: 1.5, fill: c.fill, points: { show: false },
-        value: function(u,v){return v != null ? v.toFixed(0) + ' ms' : '--'} };
-    }, [times, vals]);
+    var statsData = [
+      ['Current', vals[vals.length - 1].toFixed(0) + ' ms'],
+      ['Min', arrMin(vals).toFixed(0) + ' ms'],
+      ['Max', arrMax(vals).toFixed(0) + ' ms'],
+      ['Average', arrAvg(vals).toFixed(0) + ' ms']
+    ];
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'layout-stats-left';
+    wrapper.appendChild(makeStatsVertical(statsData));
+    var ch = makeChartBox(t, 'latency', c);
+    wrapper.appendChild(ch.container);
+    latRow.appendChild(wrapper);
+
+    initChart(ch.container, ch.chartDiv, {
+      label: t.name, stroke: c.stroke, width: 1.5, fill: c.fill, points: { show: false },
+      value: function(u,v){return v != null ? v.toFixed(0) + ' ms' : '--'}
+    }, [times, vals], 160);
   });
 
-  // ---- PER-TUNNEL SPEED CHARTS ----
+  // ---- PER-TUNNEL SPEED: layout = chart TOP, stats BOTTOM horizontal ----
   var spdRow = document.getElementById('charts-speed');
   mockTunnels.forEach(function(t) {
+    var c = tunnelColor(t.name);
     var times = mockTime(24, 900);
     var vals = mockValues(24, t.spdBase, t.spdVar);
-    buildChartCard(spdRow, t, 'speed', function(c) {
-      return { label: t.name, stroke: c.stroke, width: 2, fill: c.fill,
-        points: { show: true, size: 4, fill: c.point, stroke: '#1c1c1b' },
-        value: function(u,v){return v != null ? v.toFixed(1) + ' Mbps' : '--'} };
-    }, [times, vals]);
+    var statsData = [
+      ['Current', vals[vals.length - 1].toFixed(1) + ' Mbps'],
+      ['Min', arrMin(vals).toFixed(1) + ' Mbps'],
+      ['Max', arrMax(vals).toFixed(1) + ' Mbps'],
+      ['Average', arrAvg(vals).toFixed(1) + ' Mbps']
+    ];
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'layout-stats-bottom';
+    var ch = makeChartBox(t, 'speed', c);
+    wrapper.appendChild(ch.container);
+    wrapper.appendChild(makeStatsHorizontal(statsData));
+    spdRow.appendChild(wrapper);
+
+    initChart(ch.container, ch.chartDiv, {
+      label: t.name, stroke: c.stroke, width: 2, fill: c.fill,
+      points: { show: true, size: 4, fill: c.point, stroke: '#1a1a1e' },
+      value: function(u,v){return v != null ? v.toFixed(1) + ' Mbps' : '--'}
+    }, [times, vals], 160);
   });
 
   // ---- TOTAL TRAFFIC CHART (in/out, not per-tunnel) ----

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JamperHUB / Setup</title>
+<link rel="stylesheet" href="common.css">
+<style>
+.setup-page {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 60px 24px;
+}
+
+.setup-step {
+  display: none;
+}
+
+.setup-step.active {
+  display: block;
+}
+
+.setup-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+}
+
+.setup-desc {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.setup-progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+
+.setup-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: var(--transition);
+}
+
+.setup-dot.active {
+  background: var(--text-muted);
+}
+
+.setup-dot.done {
+  background: var(--status-active-text);
+}
+
+.setup-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+}
+</style>
+</head>
+<body>
+
+<div class="setup-page">
+
+  <div class="setup-progress">
+    <div class="setup-dot active" id="dot-1"></div>
+    <div class="setup-dot" id="dot-2"></div>
+  </div>
+
+  <!-- STEP 1: NETWORK -->
+  <div class="setup-step active" id="step-1">
+    <div class="setup-title">Network Setup</div>
+    <div class="setup-desc">Select which interface receives internet and which connects to your devices.</div>
+
+    <div class="form-group">
+      <label class="form-label">Input interface (internet source)</label>
+      <select class="select" id="setup-input"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Output interface (devices)</label>
+      <select class="select" id="setup-output"></select>
+    </div>
+
+    <div class="collapsible-header" id="adv-toggle" style="margin-top:16px;">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      Advanced (DHCP)
+    </div>
+    <div class="collapsible-body" id="adv-body">
+      <div class="form-group" style="margin-top:12px;">
+        <label class="form-label">Subnet</label>
+        <input class="input input-mono" id="setup-subnet" value="198.18.0.0/24">
+      </div>
+      <div class="form-group">
+        <label class="form-label">DHCP range</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="input input-mono" id="setup-dhcp-start" value="198.18.0.100" style="flex:1">
+          <span class="t-mono-sm">-</span>
+          <input class="input input-mono" id="setup-dhcp-end" value="198.18.0.200" style="flex:1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">DNS</label>
+        <input class="input input-mono" id="setup-dns" value="8.8.8.8, 1.1.1.1">
+      </div>
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn" id="btn-step1-next">Next</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: FIRST TUNNEL -->
+  <div class="setup-step" id="step-2">
+    <div class="setup-title">Add First Tunnel</div>
+    <div class="setup-desc">Upload or paste a VPN config to get started.</div>
+
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="input" id="setup-tun-name" placeholder="My VPN Server">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <select class="select" id="setup-tun-type"></select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Config</label>
+      <textarea class="input input-mono" id="setup-tun-config" rows="10" placeholder="Paste config here..."></textarea>
+      <div style="margin-top:8px;">
+        <input type="file" id="setup-file" style="display:none">
+        <button class="btn btn-sm" id="btn-upload">Upload file</button>
+      </div>
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn" id="btn-step2-back">Back</button>
+      <button class="btn btn-success" id="btn-finish">Finish</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="common.js"></script>
+<script>
+// check if already configured
+api.get('/api/status').then(function(s) {
+  if (!s.first_run) {
+    window.location.href = 'index.html';
+  }
+});
+
+// load interfaces
+api.get('/api/network/interfaces').then(function(ifaces) {
+  var selIn = qs('#setup-input');
+  var selOut = qs('#setup-output');
+  ifaces.forEach(function(iface) {
+    var label = iface.name + (iface.ip ? ' (' + iface.ip + ')' : '') + ' [' + iface.state + ']';
+    var o1 = el('option', '', label);
+    o1.value = iface.name;
+    selIn.appendChild(o1);
+    selOut.appendChild(o1.cloneNode(true));
+  });
+});
+
+// load tunnel types
+api.get('/api/tunnels/types').then(function(types) {
+  var sel = qs('#setup-tun-type');
+  types.forEach(function(t) {
+    var o = el('option', '', t.name);
+    o.value = t.type;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', function() {
+    var t = types.find(function(x) { return x.type === sel.value; });
+    if (t) qs('#setup-tun-config').placeholder = t.config_placeholder;
+  });
+  if (types.length) qs('#setup-tun-config').placeholder = types[0].config_placeholder;
+});
+
+// advanced toggle
+qs('#adv-toggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  qs('#adv-body').classList.toggle('open');
+});
+
+// file upload
+qs('#btn-upload').addEventListener('click', function(e) {
+  e.preventDefault();
+  qs('#setup-file').click();
+});
+qs('#setup-file').addEventListener('change', function() {
+  if (this.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function() { qs('#setup-tun-config').value = reader.result; };
+    reader.readAsText(this.files[0]);
+  }
+});
+
+// step navigation
+function showStep(n) {
+  qs('#step-1').className = 'setup-step' + (n === 1 ? ' active' : '');
+  qs('#step-2').className = 'setup-step' + (n === 2 ? ' active' : '');
+  qs('#dot-1').className = 'setup-dot' + (n === 1 ? ' active' : ' done');
+  qs('#dot-2').className = 'setup-dot' + (n === 2 ? ' active' : '');
+}
+
+qs('#btn-step1-next').addEventListener('click', function() {
+  var input = qs('#setup-input').value;
+  var output = qs('#setup-output').value;
+  if (!input || !output) { alert('Select both interfaces'); return; }
+  if (input === output) { alert('Input and output must be different'); return; }
+
+  // save network
+  api.put('/api/network', {
+    input: input,
+    output: output,
+    output_mode: 'physical',
+    subnet: qs('#setup-subnet').value
+  });
+
+  // save dhcp
+  api.put('/api/dhcp', {
+    enabled: true,
+    range_start: qs('#setup-dhcp-start').value,
+    range_end: qs('#setup-dhcp-end').value,
+    lease_time: '12h',
+    dns: qs('#setup-dns').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean)
+  });
+
+  showStep(2);
+});
+
+qs('#btn-step2-back').addEventListener('click', function() { showStep(1); });
+
+qs('#btn-finish').addEventListener('click', function() {
+  var name = qs('#setup-tun-name').value;
+  var type = qs('#setup-tun-type').value;
+  var config = qs('#setup-tun-config').value;
+
+  if (!name) { alert('Enter a tunnel name'); return; }
+  if (!config) { alert('Paste or upload a config'); return; }
+
+  api.post('/api/tunnels', {
+    name: name,
+    type: type,
+    enabled: true,
+    config_data: config
+  }).then(function(r) {
+    if (r.ok === false) { alert(r.error); return; }
+    window.location.href = 'index.html';
+  });
+});
+</script>
+</body>
+</html>

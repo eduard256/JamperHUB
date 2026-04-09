@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JamperHUB / Settings</title>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+
+<div class="page">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:40px;">
+    <div class="section-title" style="margin-bottom:0">Settings</div>
+    <a href="index.html" class="btn btn-sm">Back to Dashboard</a>
+  </div>
+
+  <!-- NETWORK -->
+  <div class="section">
+    <div class="section-title">Network</div>
+    <div class="table-card" style="max-width:500px;">
+      <div class="form-group">
+        <label class="form-label">Input interface</label>
+        <select class="select" id="net-input"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Output interface</label>
+        <div style="display:flex;gap:8px;">
+          <select class="select" id="net-output" style="flex:1"></select>
+          <button class="btn btn-sm" id="btn-create-bridge">Create bridge</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subnet</label>
+        <input class="input input-mono" id="net-subnet" value="198.18.0.0/24">
+      </div>
+      <button class="btn btn-success" id="btn-save-network">Apply</button>
+    </div>
+  </div>
+
+  <!-- DHCP -->
+  <div class="section">
+    <div class="section-title">DHCP</div>
+    <div class="table-card" style="max-width:500px;">
+      <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+        <label class="form-label" style="margin-bottom:0">Enabled</label>
+        <div class="toggle on" id="dhcp-toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Range</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="input input-mono" id="dhcp-start" style="flex:1">
+          <span class="t-mono-sm">-</span>
+          <input class="input input-mono" id="dhcp-end" style="flex:1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lease time</label>
+        <input class="input input-mono" id="dhcp-lease">
+      </div>
+      <div class="form-group">
+        <label class="form-label">DNS servers (comma separated)</label>
+        <input class="input input-mono" id="dhcp-dns">
+      </div>
+      <button class="btn btn-success" id="btn-save-dhcp">Apply</button>
+    </div>
+  </div>
+
+  <!-- BALANCER -->
+  <div class="section">
+    <div class="section-title">Balancer</div>
+    <div class="table-card" style="max-width:500px;">
+      <div class="form-group">
+        <label class="form-label">Healthcheck interval (sec)</label>
+        <input class="input input-mono" id="bal-hc-interval" type="number">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Speed test interval (sec)</label>
+        <input class="input input-mono" id="bal-st-interval" type="number">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Test URL</label>
+        <input class="input input-mono" id="bal-test-url">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Speed test URL</label>
+        <input class="input input-mono" id="bal-st-url">
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+        <label class="form-label" style="margin-bottom:0">Fallback direct</label>
+        <div class="toggle on" id="bal-fallback" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Switch threshold (%)</label>
+        <input class="input input-mono" id="bal-threshold" type="number">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Switch cooldown (sec)</label>
+        <input class="input input-mono" id="bal-cooldown" type="number">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ping timeout (sec)</label>
+        <input class="input input-mono" id="bal-ping-timeout" type="number">
+      </div>
+      <button class="btn btn-success" id="btn-save-balancer">Apply</button>
+    </div>
+  </div>
+
+  <!-- RAW CONFIG -->
+  <div class="section">
+    <div class="collapsible-header" id="raw-toggle">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      Raw config
+    </div>
+    <div class="collapsible-body" id="raw-body">
+      <div class="table-card" style="margin-top:12px;">
+        <textarea class="input input-mono" id="raw-config" rows="20"></textarea>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button class="btn btn-success" id="btn-save-raw">Apply</button>
+          <button class="btn" id="btn-reload-raw">Reload</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="common.js"></script>
+<script>
+// ---- LOAD DATA ----
+function loadAll() {
+  loadInterfaces();
+  loadNetwork();
+  loadDHCP();
+  loadBalancer();
+  loadRawConfig();
+}
+
+function loadInterfaces() {
+  api.get('/api/network/interfaces').then(function(ifaces) {
+    var selIn = qs('#net-input');
+    var selOut = qs('#net-output');
+    selIn.textContent = '';
+    selOut.textContent = '';
+    ifaces.forEach(function(iface) {
+      var o1 = el('option', '', iface.name + (iface.ip ? ' (' + iface.ip + ')' : ''));
+      o1.value = iface.name;
+      selIn.appendChild(o1);
+      var o2 = o1.cloneNode(true);
+      selOut.appendChild(o2);
+    });
+    // set current values after options are loaded
+    api.get('/api/network').then(function(n) {
+      selIn.value = n.input;
+      selOut.value = n.output;
+      qs('#net-subnet').value = n.subnet;
+    });
+  });
+}
+
+function loadNetwork() {
+  // handled inside loadInterfaces
+}
+
+function loadDHCP() {
+  api.get('/api/dhcp').then(function(d) {
+    var c = d.config;
+    qs('#dhcp-toggle').className = 'toggle' + (c.enabled ? ' on' : '');
+    qs('#dhcp-start').value = c.range_start;
+    qs('#dhcp-end').value = c.range_end;
+    qs('#dhcp-lease').value = c.lease_time;
+    qs('#dhcp-dns').value = (c.dns || []).join(', ');
+  });
+}
+
+function loadBalancer() {
+  api.get('/api/balancer').then(function(b) {
+    var c = b.config;
+    qs('#bal-hc-interval').value = c.healthcheck_interval;
+    qs('#bal-st-interval').value = c.speed_test_interval;
+    qs('#bal-test-url').value = c.test_url;
+    qs('#bal-st-url').value = c.speed_test_url;
+    qs('#bal-fallback').className = 'toggle' + (c.fallback_direct ? ' on' : '');
+    qs('#bal-threshold').value = c.switch_threshold_percent;
+    qs('#bal-cooldown').value = c.switch_cooldown;
+    qs('#bal-ping-timeout').value = c.ping_timeout;
+  });
+}
+
+function loadRawConfig() {
+  api.get('/api/config').then(function(cfg) {
+    qs('#raw-config').value = JSON.stringify(cfg, null, 2);
+  });
+}
+
+// ---- SAVE HANDLERS ----
+qs('#btn-save-network').addEventListener('click', function() {
+  api.put('/api/network', {
+    input: qs('#net-input').value,
+    output: qs('#net-output').value,
+    output_mode: 'physical',
+    subnet: qs('#net-subnet').value
+  }).then(function(r) { alert(r.message || r.error); });
+});
+
+qs('#btn-create-bridge').addEventListener('click', function() {
+  var name = prompt('Bridge name:', 'br-jamperhub');
+  if (!name) return;
+  api.post('/api/network/bridge', { name: name }).then(function(r) {
+    alert(r.message || r.error);
+    loadInterfaces();
+  });
+});
+
+qs('#btn-save-dhcp').addEventListener('click', function() {
+  api.put('/api/dhcp', {
+    enabled: qs('#dhcp-toggle').classList.contains('on'),
+    range_start: qs('#dhcp-start').value,
+    range_end: qs('#dhcp-end').value,
+    lease_time: qs('#dhcp-lease').value,
+    dns: qs('#dhcp-dns').value.split(',').map(function(s) { return s.trim(); }).filter(Boolean)
+  }).then(function(r) { alert(r.message || r.error); });
+});
+
+qs('#btn-save-balancer').addEventListener('click', function() {
+  api.put('/api/balancer', {
+    healthcheck_interval: parseInt(qs('#bal-hc-interval').value),
+    speed_test_interval: parseInt(qs('#bal-st-interval').value),
+    test_url: qs('#bal-test-url').value,
+    speed_test_url: qs('#bal-st-url').value,
+    fallback_direct: qs('#bal-fallback').classList.contains('on'),
+    switch_threshold_percent: parseInt(qs('#bal-threshold').value),
+    switch_cooldown: parseInt(qs('#bal-cooldown').value),
+    ping_timeout: parseInt(qs('#bal-ping-timeout').value),
+    ping_retries: 3,
+    speed_test_size: 10000000,
+    switch_wait_timeout: 600
+  }).then(function(r) { alert(r.message || r.error); });
+});
+
+// raw config
+qs('#raw-toggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  qs('#raw-body').classList.toggle('open');
+});
+
+qs('#btn-save-raw').addEventListener('click', function() {
+  api.put('/api/config', qs('#raw-config').value).then(function(r) {
+    alert(r.message || r.error);
+  });
+});
+
+qs('#btn-reload-raw').addEventListener('click', loadRawConfig);
+
+// ---- INIT ----
+loadAll();
+</script>
+</body>
+</html>

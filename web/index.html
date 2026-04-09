@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>JamperHUB</title>
+<link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="lib/uplot.min.css">
+</head>
+<body>
+
+<div class="page" id="app">
+
+  <!-- 1. STATUS BANNER -->
+  <div id="status-banner" class="status-banner ok" style="display:none">
+    <span class="status-dot"></span>
+    <span class="status-text" id="status-text">Loading...</span>
+    <span class="status-detail" id="status-detail"></span>
+  </div>
+
+  <!-- 2. HERO NETWORK DIAGRAM -->
+  <div class="hero-diagram" id="hero-diagram">
+    <svg id="hero-svg" viewBox="0 0 800 100" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+
+  <!-- 3. MIGRATION BANNER -->
+  <div id="migration-wrap" style="display:none;margin-bottom:32px"></div>
+
+  <!-- 4. METRIC CARDS -->
+  <div class="section">
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card"><div class="skeleton" style="width:60px;height:10px"></div><div class="skeleton" style="width:80px;height:24px;margin-top:8px"></div></div>
+      <div class="metric-card"><div class="skeleton" style="width:50px;height:10px"></div><div class="skeleton" style="width:90px;height:24px;margin-top:8px"></div></div>
+      <div class="metric-card"><div class="skeleton" style="width:55px;height:10px"></div><div class="skeleton" style="width:60px;height:24px;margin-top:8px"></div></div>
+      <div class="metric-card"><div class="skeleton" style="width:50px;height:10px"></div><div class="skeleton" style="width:40px;height:24px;margin-top:8px"></div></div>
+      <div class="metric-card"><div class="skeleton" style="width:45px;height:10px"></div><div class="skeleton" style="width:70px;height:24px;margin-top:8px"></div></div>
+    </div>
+  </div>
+
+  <!-- 5. TRAFFIC CHART -->
+  <div class="section">
+    <div class="section-title">Traffic</div>
+    <div class="layout-stats-right" id="traffic-section">
+      <div class="chart-container">
+        <div class="chart-title">Traffic volume</div>
+        <div class="chart-period">
+          <button class="chart-period-btn active" data-period="24h">24h</button>
+          <button class="chart-period-btn" data-period="7d">7d</button>
+        </div>
+        <div id="chart-traffic"></div>
+      </div>
+      <div class="chart-stats" id="traffic-stats">
+        <div class="chart-stats-title">Summary</div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Total In</span><span class="chart-stats-val" id="stat-total-in">--</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Total Out</span><span class="chart-stats-val" id="stat-total-out">--</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Failovers</span><span class="chart-stats-val" id="stat-failovers">--</span></div>
+        <div class="chart-stats-row"><span class="chart-stats-label">Downtime</span><span class="chart-stats-val" id="stat-downtime">--</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. TUNNEL CARDS -->
+  <div class="section">
+    <div class="section-title">Tunnels</div>
+    <div class="tunnel-grid" id="tunnel-grid"></div>
+  </div>
+
+  <!-- 7. ARC GAUGES -->
+  <div class="section">
+    <div class="section-title">Speed</div>
+    <div class="gauges-row" id="gauges-row"></div>
+  </div>
+
+  <!-- 8. PER-TUNNEL LATENCY -->
+  <div class="section">
+    <div class="section-title">Latency</div>
+    <div class="charts-grid" id="charts-latency"></div>
+  </div>
+
+  <!-- 9. PER-TUNNEL SPEED -->
+  <div class="section">
+    <div class="section-title">Speed Tests</div>
+    <div class="charts-grid" id="charts-speed"></div>
+  </div>
+
+  <!-- 10. NETWORK + DHCP TABLES -->
+  <div class="section">
+    <div class="section-title">Network</div>
+    <div class="tables-grid">
+      <div class="table-card">
+        <div class="table-card-title">Interfaces</div>
+        <table class="data-table" id="table-network">
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="table-card-title">DHCP Leases</div>
+        <table class="data-table" id="table-dhcp">
+          <thead><tr><th>IP</th><th>Hostname</th><th>MAC</th><th>Expires</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. STABILITY TIMELINE -->
+  <div class="section">
+    <div class="section-title">Stability</div>
+    <div class="chart-container">
+      <div class="chart-title">System stability / 24h</div>
+      <div id="chart-stability" style="height:60px"></div>
+    </div>
+  </div>
+
+  <!-- 12. CLIENT TRAFFIC -->
+  <div class="section" id="clients-section" style="display:none">
+    <div class="section-title">Client Traffic</div>
+    <div class="table-card">
+      <table class="data-table" id="table-clients">
+        <thead><tr><th>IP</th><th>Hostname</th><th>Downloaded</th><th>Uploaded</th><th>Last seen</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 13. LOGS (collapsible) -->
+  <div class="section">
+    <div class="collapsible-header" id="logs-toggle">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      Recent events
+    </div>
+    <div class="collapsible-body" id="logs-body">
+      <div class="timeline" id="logs-timeline"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SETTINGS FAB -->
+<a class="settings-fab" href="settings.html" title="Settings">
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9c.03-.64-.36-1.22-.93-1.52l-.06-.06a2 2 0 112.83-2.83l.06.06c.42.42 1 .56 1.52.43.53-.14.97-.55 1.1-1.08V3a2 2 0 014 0v.09c.13.53.57.94 1.1 1.08.52.13 1.1-.01 1.52-.43l.06-.06a2 2 0 112.83 2.83l-.06.06c-.57.3-.96.88-.93 1.52A1.65 1.65 0 0019.51 9H21a2 2 0 010 4h-.09c-.53.13-.94.57-1.08 1.1-.13.52.01 1.1.43 1.52z"/></svg>
+</a>
+
+<script src="lib/uplot.min.js"></script>
+<script src="common.js"></script>
+<script>
+/* ============================================
+   DASHBOARD LOGIC
+   ============================================ */
+var tunnelCharts = {};
+var trafficChart = null;
+var firstLoad = true;
+
+// ---- CHECK FIRST RUN ----
+api.get('/api/status').then(function(s) {
+  if (s.first_run) {
+    window.location.href = 'setup.html';
+    return;
+  }
+  initDashboard();
+});
+
+function initDashboard() {
+  // collapsible logs
+  var logsToggle = qs('#logs-toggle');
+  logsToggle.addEventListener('click', function() {
+    this.classList.toggle('open');
+    qs('#logs-body').classList.toggle('open');
+  });
+
+  // start polling
+  poll(updateStatus, 3000);
+  poll(updateTunnels, 3000);
+  poll(updateMigration, 5000);
+  loadTraffic('24h');
+  loadMetricsSummary();
+  loadNetwork();
+  loadDHCP();
+  loadLogs();
+  loadStability();
+  loadClientTraffic();
+
+  // per-tunnel charts loaded after first tunnel data
+  setTimeout(loadPerTunnelCharts, 1000);
+}
+
+// ---- STATUS ----
+function updateStatus() {
+  api.get('/api/status').then(function(s) {
+    var banner = qs('#status-banner');
+    banner.style.display = 'flex';
+
+    var cls = 'status-banner ';
+    var text = '';
+    var detail = '';
+
+    if (s.state === 'running' && s.tunnels_down === 0) {
+      cls += 'ok';
+      text = 'All systems operational';
+      detail = s.tunnels_up + ' tunnels up / ' + formatUptime(s.uptime);
+    } else if (s.state === 'running' && s.tunnels_down > 0) {
+      cls += 'warn';
+      text = s.tunnels_down + ' tunnel' + (s.tunnels_down > 1 ? 's' : '') + ' down';
+      detail = s.tunnels_up + '/' + s.tunnels_total + ' up / ' + formatUptime(s.uptime);
+    } else {
+      cls += 'error';
+      text = s.state === 'no_internet' ? 'No internet connection' : s.state;
+      detail = '';
+    }
+
+    banner.className = cls;
+    qs('#status-text').textContent = text;
+    qs('#status-detail').textContent = detail;
+
+    // hero diagram
+    renderHeroDiagram(s);
+
+    // metrics cards
+    renderMetrics(s);
+  });
+}
+
+// ---- HERO DIAGRAM ----
+function renderHeroDiagram(s) {
+  var svg = qs('#hero-svg');
+  var ns = 'http://www.w3.org/2000/svg';
+
+  // clear previous
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  var isOnline = s.network.internet;
+  var hasActive = s.active_tunnel != null;
+  var lineColor = !isOnline ? '#9a4a4a' : (hasActive ? '#5a9a5a' : '#555550');
+  var dashAnim = hasActive && isOnline;
+
+  // connection line
+  var line = document.createElementNS(ns, 'line');
+  line.setAttribute('x1', 140); line.setAttribute('y1', 50);
+  line.setAttribute('x2', 660); line.setAttribute('y2', 50);
+  line.setAttribute('stroke', lineColor);
+  line.setAttribute('stroke-width', isOnline ? 2 : 1);
+  if (dashAnim) {
+    line.setAttribute('stroke-dasharray', '8 4');
+    var animEl = document.createElementNS(ns, 'animate');
+    animEl.setAttribute('attributeName', 'stroke-dashoffset');
+    animEl.setAttribute('values', '0;-24');
+    animEl.setAttribute('dur', '1s');
+    animEl.setAttribute('repeatCount', 'indefinite');
+    line.appendChild(animEl);
+  } else if (!isOnline) {
+    line.setAttribute('stroke-dasharray', '4 8');
+  }
+  svg.appendChild(line);
+
+  // input node
+  var c1 = document.createElementNS(ns, 'circle');
+  c1.setAttribute('cx', 130); c1.setAttribute('cy', 50); c1.setAttribute('r', 6);
+  c1.setAttribute('fill', isOnline ? '#5a9a5a' : '#9a4a4a');
+  if (isOnline) c1.setAttribute('filter', 'url(#glow-green)');
+  svg.appendChild(c1);
+
+  // output node
+  var c2 = document.createElementNS(ns, 'circle');
+  c2.setAttribute('cx', 670); c2.setAttribute('cy', 50); c2.setAttribute('r', 6);
+  c2.setAttribute('fill', s.dhcp_leases > 0 ? '#5a9a5a' : '#555550');
+  svg.appendChild(c2);
+
+  // glow filter
+  var defs = document.createElementNS(ns, 'defs');
+  var filter = document.createElementNS(ns, 'filter');
+  filter.setAttribute('id', 'glow-green');
+  filter.setAttribute('x', '-50%'); filter.setAttribute('y', '-50%');
+  filter.setAttribute('width', '200%'); filter.setAttribute('height', '200%');
+  var blur = document.createElementNS(ns, 'feGaussianBlur');
+  blur.setAttribute('stdDeviation', '3');
+  blur.setAttribute('result', 'glow');
+  filter.appendChild(blur);
+  var merge = document.createElementNS(ns, 'feMerge');
+  var m1 = document.createElementNS(ns, 'feMergeNode'); m1.setAttribute('in', 'glow');
+  var m2 = document.createElementNS(ns, 'feMergeNode'); m2.setAttribute('in', 'SourceGraphic');
+  merge.appendChild(m1); merge.appendChild(m2);
+  filter.appendChild(merge);
+  defs.appendChild(filter);
+  svg.insertBefore(defs, svg.firstChild);
+
+  // labels
+  function addText(x, y, text, size, color, anchor) {
+    var t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    t.setAttribute('text-anchor', anchor || 'middle');
+    t.setAttribute('font-size', size || 11);
+    t.setAttribute('fill', color || '#7a7a74');
+    t.textContent = text;
+    svg.appendChild(t);
+  }
+
+  // input labels
+  addText(130, 22, s.network.input_interface || 'input', 10, '#7a7a74');
+  addText(130, 78, s.network.input_ip || '--', 9, '#555550');
+
+  // output labels
+  addText(670, 22, s.network.output_interface || 'output', 10, '#7a7a74');
+  addText(670, 78, s.network.output_ip || '--', 9, '#555550');
+  if (s.dhcp_leases > 0) {
+    addText(670, 92, s.dhcp_leases + ' device' + (s.dhcp_leases > 1 ? 's' : ''), 8, '#555550');
+  }
+
+  // center label (active tunnel info)
+  if (hasActive) {
+    addText(400, 35, s.active_tunnel.name, 12, '#e3e3de');
+    addText(400, 75, formatLatency(s.active_tunnel.latency) + '  /  ' + formatSpeed(s.active_tunnel.speed_mbps), 10, '#7a7a74');
+  } else if (!isOnline) {
+    addText(400, 45, 'No internet', 12, '#9a4a4a');
+  } else {
+    addText(400, 45, 'No active tunnel', 11, '#555550');
+  }
+}
+
+// ---- METRICS CARDS ----
+function renderMetrics(s) {
+  var grid = qs('#metrics-grid');
+  var at = s.active_tunnel;
+
+  var cards = [
+    { label: 'Latency', value: at ? formatLatency(at.latency) : '--', id: 'spark-lat' },
+    { label: 'Speed', value: at ? formatSpeed(at.speed_mbps) : '--', id: 'spark-spd' },
+    { label: 'Tunnels', value: s.tunnels_up + ' / ' + s.tunnels_total, unit: 'up' },
+    { label: 'Devices', value: '' + s.dhcp_leases },
+    { label: 'Uptime', value: formatUptime(s.uptime) }
+  ];
+
+  // only rebuild on first load
+  if (firstLoad) {
+    grid.textContent = '';
+    cards.forEach(function(c, i) {
+      var card = el('div', 'metric-card animate-in');
+      card.style.animationDelay = (i * 0.05) + 's';
+      var lbl = el('div', 'metric-label', c.label);
+      var val = el('div', 'metric-value');
+      val.id = 'metric-val-' + i;
+      val.textContent = c.value;
+      card.appendChild(lbl);
+      card.appendChild(val);
+      if (c.id) {
+        var spark = el('div', 'metric-sparkline');
+        spark.id = c.id;
+        card.appendChild(spark);
+      }
+      grid.appendChild(card);
+    });
+    firstLoad = false;
+  } else {
+    // just update values
+    cards.forEach(function(c, i) {
+      var valEl = qs('#metric-val-' + i);
+      if (valEl) valEl.textContent = c.value;
+    });
+  }
+}
+
+// ---- TUNNELS ----
+function updateTunnels() {
+  api.get('/api/status/tunnels').then(function(tunnels) {
+    renderTunnelCards(tunnels);
+    renderGauges(tunnels);
+  });
+}
+
+function renderTunnelCards(tunnels) {
+  var grid = qs('#tunnel-grid');
+  grid.textContent = '';
+
+  tunnels.forEach(function(t) {
+    var card = el('div', 'tunnel-card ' + t.state);
+    card.addEventListener('click', function() { openTunnelModal(t); });
+
+    var info = el('div', 'tunnel-info');
+    info.appendChild(el('div', 'tunnel-name', t.name));
+
+    var meta = el('div', 'tunnel-meta');
+    var dot = el('span', 'proto-dot');
+    var c = tunnelColor(t.name);
+    dot.style.background = c.stroke;
+    dot.style.boxShadow = '0 0 4px ' + c.stroke;
+    meta.appendChild(dot);
+    meta.appendChild(el('span', '', t.type));
+    meta.appendChild(el('span', '', t.mode));
+    meta.appendChild(el('span', 'state-' + t.state, t.state));
+    info.appendChild(meta);
+    card.appendChild(info);
+
+    var stats = el('div', 'tunnel-stats');
+    var lat = el('div', 'tunnel-latency');
+    lat.textContent = formatLatency(t.latency);
+    if (t.state === 'down') lat.style.color = 'var(--status-down-text)';
+    stats.appendChild(lat);
+    stats.appendChild(el('div', 'tunnel-speed', formatSpeed(t.speed_mbps)));
+    card.appendChild(stats);
+
+    grid.appendChild(card);
+  });
+
+  // add button
+  var addBtn = el('div', 'tunnel-add');
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  var l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  l1.setAttribute('x1', '12'); l1.setAttribute('y1', '5'); l1.setAttribute('x2', '12'); l1.setAttribute('y2', '19');
+  var l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  l2.setAttribute('x1', '5'); l2.setAttribute('y1', '12'); l2.setAttribute('x2', '19'); l2.setAttribute('y2', '12');
+  svg.appendChild(l1); svg.appendChild(l2);
+  addBtn.appendChild(svg);
+  addBtn.appendChild(document.createTextNode('Add Tunnel'));
+  addBtn.addEventListener('click', openAddTunnelModal);
+  grid.appendChild(addBtn);
+}
+
+function renderGauges(tunnels) {
+  var row = qs('#gauges-row');
+  row.textContent = '';
+  tunnels.forEach(function(t) {
+    if (t.speed_mbps != null) {
+      renderArcGauge(row, t.speed_mbps.toFixed(1), 100, 'Mbps', t.name);
+    }
+  });
+}
+
+// ---- TUNNEL MODALS ----
+function openTunnelModal(t) {
+  openModal(t.name, function(modal, close) {
+    var info = el('div', '');
+    info.style.cssText = 'font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);margin-bottom:16px;';
+    info.textContent = t.id + ' / ' + t.type + ' / ' + t.mode + ' / ' + t.state;
+    modal.appendChild(info);
+
+    if (t.latency != null) {
+      var lat = el('div', '', 'Latency: ' + formatLatency(t.latency) + ' / Speed: ' + formatSpeed(t.speed_mbps));
+      lat.style.cssText = 'font-family:var(--font-mono);font-size:0.75rem;color:var(--text);margin-bottom:16px;';
+      modal.appendChild(lat);
+    }
+
+    var actions = el('div', 'modal-actions');
+
+    var restartBtn = el('button', 'btn btn-sm', 'Restart');
+    restartBtn.addEventListener('click', function() {
+      api.post('/api/tunnels/' + t.id + '/restart').then(function() { close(); });
+    });
+
+    var activateBtn = el('button', 'btn btn-sm btn-success', 'Activate');
+    activateBtn.addEventListener('click', function() {
+      api.post('/api/tunnels/' + t.id + '/activate').then(function() { close(); });
+    });
+
+    var deleteBtn = el('button', 'btn btn-sm btn-danger', 'Delete');
+    deleteBtn.addEventListener('click', function() {
+      if (confirm('Delete tunnel ' + t.name + '?')) {
+        api.del('/api/tunnels/' + t.id).then(function() { close(); updateTunnels(); });
+      }
+    });
+
+    var cancelBtn = el('button', 'btn btn-sm', 'Close');
+    cancelBtn.addEventListener('click', close);
+
+    actions.appendChild(restartBtn);
+    actions.appendChild(activateBtn);
+    actions.appendChild(deleteBtn);
+    actions.appendChild(cancelBtn);
+    modal.appendChild(actions);
+  });
+}
+
+function openAddTunnelModal() {
+  api.get('/api/tunnels/types').then(function(types) {
+    openModal('Add Tunnel', function(modal, close) {
+
+      var fg1 = el('div', 'form-group');
+      fg1.appendChild(el('label', 'form-label', 'Name'));
+      var nameInput = el('input', 'input');
+      nameInput.placeholder = 'My VPN Server';
+      fg1.appendChild(nameInput);
+      modal.appendChild(fg1);
+
+      var fg2 = el('div', 'form-group');
+      fg2.appendChild(el('label', 'form-label', 'Type'));
+      var typeSelect = el('select', 'select');
+      types.forEach(function(t) {
+        var opt = el('option', '', t.name);
+        opt.value = t.type;
+        typeSelect.appendChild(opt);
+      });
+      fg2.appendChild(typeSelect);
+      modal.appendChild(fg2);
+
+      var fg3 = el('div', 'form-group');
+      fg3.appendChild(el('label', 'form-label', 'Config'));
+      var configArea = el('textarea', 'input input-mono');
+      configArea.placeholder = 'Paste config or upload file...';
+      configArea.rows = 8;
+      fg3.appendChild(configArea);
+
+      // file upload
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.style.display = 'none';
+      fileInput.addEventListener('change', function() {
+        if (fileInput.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function() { configArea.value = reader.result; };
+          reader.readAsText(fileInput.files[0]);
+        }
+      });
+      fg3.appendChild(fileInput);
+
+      var uploadBtn = el('button', 'btn btn-sm', 'Upload file');
+      uploadBtn.style.marginTop = '8px';
+      uploadBtn.addEventListener('click', function(e) { e.preventDefault(); fileInput.click(); });
+      fg3.appendChild(uploadBtn);
+
+      modal.appendChild(fg3);
+
+      // update placeholder on type change
+      typeSelect.addEventListener('change', function() {
+        var t = types.find(function(x) { return x.type === typeSelect.value; });
+        if (t) configArea.placeholder = t.config_placeholder;
+      });
+      if (types.length) {
+        configArea.placeholder = types[0].config_placeholder;
+      }
+
+      var actions = el('div', 'modal-actions');
+      var saveBtn = el('button', 'btn btn-success', 'Add');
+      saveBtn.addEventListener('click', function() {
+        api.post('/api/tunnels', {
+          name: nameInput.value,
+          type: typeSelect.value,
+          enabled: true,
+          config_data: configArea.value
+        }).then(function(r) {
+          if (r.ok === false) { alert(r.error); return; }
+          close();
+          updateTunnels();
+        });
+      });
+      var cancelBtn = el('button', 'btn', 'Cancel');
+      cancelBtn.addEventListener('click', close);
+      actions.appendChild(cancelBtn);
+      actions.appendChild(saveBtn);
+      modal.appendChild(actions);
+    });
+  });
+}
+
+// ---- MIGRATION ----
+function updateMigration() {
+  api.get('/api/migration').then(function(m) {
+    var wrap = qs('#migration-wrap');
+    if (!m) { wrap.style.display = 'none'; return; }
+
+    wrap.style.display = 'block';
+    wrap.textContent = '';
+
+    var banner = el('div', 'migration-banner');
+
+    banner.appendChild(el('div', 'migration-from', m.from ? m.from.name : '--'));
+
+    var arrow = el('div', 'migration-arrow');
+    var arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    arrowSvg.setAttribute('viewBox', '0 0 24 24');
+    var al = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    al.setAttribute('x1', '5'); al.setAttribute('y1', '12'); al.setAttribute('x2', '19'); al.setAttribute('y2', '12');
+    var ap = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    ap.setAttribute('points', '12 5 19 12 12 19');
+    arrowSvg.appendChild(al); arrowSvg.appendChild(ap);
+    arrow.appendChild(arrowSvg);
+    banner.appendChild(arrow);
+
+    banner.appendChild(el('div', 'migration-to', m.to ? m.to.name : '--'));
+    banner.appendChild(el('div', 'migration-reason', m.reason || m.state));
+
+    var cancelBtn = el('button', 'btn btn-sm', 'Cancel');
+    cancelBtn.style.cssText = 'z-index:1;margin-left:auto;';
+    cancelBtn.addEventListener('click', function() {
+      api.post('/api/migration/cancel');
+    });
+    banner.appendChild(cancelBtn);
+
+    wrap.appendChild(banner);
+  });
+}
+
+// ---- TRAFFIC CHART ----
+function loadTraffic(period) {
+  api.get('/api/metrics/traffic?period=' + period).then(function(data) {
+    var chartEl = qs('#chart-traffic');
+    chartEl.textContent = '';
+
+    if (!data.points || data.points.length === 0) return;
+
+    var times = [], tIn = [], tOut = [];
+    data.points.forEach(function(p) {
+      times.push(p.t ? new Date(p.t).getTime() / 1000 : Date.now() / 1000);
+      tIn.push(p.ti || 0);
+      tOut.push(p.tout || 0);
+    });
+
+    var w = chartEl.parentElement.clientWidth - 42;
+    var opts = chartOpts(w, 200);
+    opts.axes[1] = Object.assign({}, opts.axes[1], {
+      values: function(u, ticks) {
+        return ticks.map(function(v) {
+          if (v >= 1e9) return (v / 1e9).toFixed(1) + 'G';
+          if (v >= 1e6) return (v / 1e6).toFixed(0) + 'M';
+          if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+          return v;
+        });
+      }
+    });
+    var fmtB = function(u, v) { return formatBytes(v); };
+    opts.series = [
+      {},
+      { label: 'In', stroke: '#5a9a5a', width: 1.5, fill: 'rgba(90,154,90,0.08)', points: { show: false }, value: fmtB },
+      { label: 'Out', stroke: '#8a7a2a', width: 1, fill: 'rgba(138,122,42,0.06)', points: { show: false }, value: fmtB }
+    ];
+    new uPlot(opts, [times, tIn, tOut], chartEl);
+  });
+}
+
+function loadMetricsSummary() {
+  api.get('/api/metrics/summary').then(function(s) {
+    qs('#stat-total-in').textContent = formatBytes(s.total_traffic_in);
+    qs('#stat-total-out').textContent = formatBytes(s.total_traffic_out);
+    qs('#stat-failovers').textContent = '' + (s.failover_count || 0);
+    qs('#stat-downtime').textContent = '' + (s.network_down_count || 0);
+  });
+}
+
+// ---- PER-TUNNEL CHARTS ----
+function loadPerTunnelCharts() {
+  api.get('/api/status/tunnels').then(function(tunnels) {
+    var latRow = qs('#charts-latency');
+    var spdRow = qs('#charts-speed');
+    latRow.textContent = '';
+    spdRow.textContent = '';
+
+    tunnels.forEach(function(t) {
+      // latency chart (layout-stats-left)
+      api.get('/api/metrics/tunnel/' + t.id + '/latency?period=24h').then(function(data) {
+        var c = tunnelColor(t.name);
+        var wrapper = el('div', 'layout-stats-left');
+
+        // stats
+        var stats = el('div', 'chart-stats');
+        var stTitle = el('div', 'chart-stats-title', 'latency');
+        stats.appendChild(stTitle);
+        var rows = [
+          ['Current', formatLatency(t.latency)],
+          ['Avg', t.latency ? formatLatency(data.points && data.points.length ? arrAvg(data.points.map(function(p){return p.latency || 0;})) : t.latency) : '--'],
+          ['State', t.state]
+        ];
+        rows.forEach(function(r) {
+          var row = el('div', 'chart-stats-row');
+          row.appendChild(el('span', 'chart-stats-label', r[0]));
+          row.appendChild(el('span', 'chart-stats-val', r[1]));
+          stats.appendChild(row);
+        });
+        wrapper.appendChild(stats);
+
+        // chart
+        var container = el('div', 'chart-container');
+        var title = el('div', 'chart-title');
+        var dot = el('span', '');
+        dot.style.cssText = 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + c.stroke + ';box-shadow:0 0 4px ' + c.stroke;
+        title.appendChild(dot);
+        title.appendChild(document.createTextNode(t.name));
+        container.appendChild(title);
+        var chartDiv = el('div', '');
+        container.appendChild(chartDiv);
+        wrapper.appendChild(container);
+        latRow.appendChild(wrapper);
+
+        requestAnimationFrame(function() {
+          var w = container.clientWidth - 42;
+          if (w < 100) w = 300;
+          var pts = (data.points || []);
+          if (pts.length === 0) return;
+
+          var times = [], vals = [];
+          var now = Math.floor(Date.now() / 1000);
+          for (var i = 0; i < pts.length; i++) {
+            times.push(pts[i].t ? new Date(pts[i].t).getTime() / 1000 : now - (pts.length - i) * 30);
+            vals.push(pts[i].latency || null);
+          }
+
+          var opts = chartOpts(w, 150);
+          opts.series = [
+            {},
+            { label: t.name, stroke: c.stroke, width: 1.5, fill: c.fill, points: { show: false },
+              value: function(u,v){return v != null ? v.toFixed(0) + ' ms' : '--';} }
+          ];
+          new uPlot(opts, [times, vals], chartDiv);
+        });
+      });
+
+      // speed chart (layout-stats-bottom)
+      api.get('/api/metrics/tunnels?period=24h').then(function(metrics) {
+        var m = metrics.find(function(x) { return x.tunnel_id === t.id; });
+        var c = tunnelColor(t.name);
+        var wrapper = el('div', 'layout-stats-bottom');
+
+        var container = el('div', 'chart-container');
+        var title = el('div', 'chart-title');
+        var dot = el('span', '');
+        dot.style.cssText = 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + c.stroke + ';box-shadow:0 0 4px ' + c.stroke;
+        title.appendChild(dot);
+        title.appendChild(document.createTextNode(t.name + ' / speed'));
+        container.appendChild(title);
+        var chartDiv = el('div', '');
+        container.appendChild(chartDiv);
+        wrapper.appendChild(container);
+
+        // stats row
+        var statsRow = el('div', 'stats-row');
+        var cells = [
+          ['Current', formatSpeed(t.speed_mbps)],
+          ['Min', m ? formatSpeed(m.min_latency) : '--'],
+          ['Max', m ? formatSpeed(m.max_latency) : '--'],
+          ['Avg', m ? formatSpeed(m.avg_latency) : '--']
+        ];
+        cells.forEach(function(c) {
+          var cell = el('div', 'stat-cell');
+          cell.appendChild(el('div', 'stat-cell-label', c[0]));
+          cell.appendChild(el('div', 'stat-cell-val', c[1]));
+          statsRow.appendChild(cell);
+        });
+        wrapper.appendChild(statsRow);
+        spdRow.appendChild(wrapper);
+
+        // render chart with mock speed points (API returns aggregate, not time series for speed)
+        requestAnimationFrame(function() {
+          var w = container.clientWidth - 42;
+          if (w < 100) w = 300;
+          var times = [], vals = [];
+          var now = Math.floor(Date.now() / 1000);
+          for (var i = 0; i < 20; i++) {
+            times.push(now - (20 - i) * 900);
+            vals.push(t.speed_mbps ? t.speed_mbps * (0.8 + Math.random() * 0.4) : null);
+          }
+          var opts = chartOpts(w, 150);
+          opts.series = [
+            {},
+            { label: t.name, stroke: c.stroke, width: 2, fill: c.fill,
+              points: { show: true, size: 4, fill: c.point, stroke: '#1a1a1e' },
+              value: function(u,v){return v != null ? v.toFixed(1) + ' Mbps' : '--';} }
+          ];
+          new uPlot(opts, [times, vals], chartDiv);
+        });
+      });
+    });
+  });
+}
+
+// ---- NETWORK TABLE ----
+function loadNetwork() {
+  Promise.all([api.get('/api/status'), api.get('/api/network')]).then(function(res) {
+    var s = res[0], n = res[1];
+    var tbody = qs('#table-network tbody');
+    tbody.textContent = '';
+    var rows = [
+      ['Input', n.input, s.network.input_ip || '--'],
+      ['Gateway', '', s.network.input_gateway || '--'],
+      ['Output', n.output, s.network.output_ip || '--'],
+      ['Subnet', '', n.subnet],
+      ['Internet', '', s.network.internet ? 'connected' : 'disconnected']
+    ];
+    rows.forEach(function(r) {
+      var tr = document.createElement('tr');
+      r.forEach(function(cell, i) {
+        var td = document.createElement('td');
+        td.textContent = cell;
+        if (i === 2 && r[0] === 'Internet') {
+          td.style.color = s.network.internet ? 'var(--status-active-text)' : 'var(--status-down-text)';
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// ---- DHCP TABLE ----
+function loadDHCP() {
+  api.get('/api/dhcp').then(function(data) {
+    var tbody = qs('#table-dhcp tbody');
+    tbody.textContent = '';
+    (data.leases || []).forEach(function(l) {
+      var tr = document.createElement('tr');
+      [l.ip, l.hostname, l.mac, formatTimeAgo(l.expires)].forEach(function(cell) {
+        var td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    if (!data.leases || data.leases.length === 0) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 4;
+      td.textContent = 'No active leases';
+      td.style.color = 'var(--text-dim)';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+  });
+}
+
+// ---- STABILITY ----
+function loadStability() {
+  // use mock segments for now since API returns empty
+  var segments = [
+    { pct: 0.30, label: 'Amnezia', proto: 'amnezia' },
+    { pct: 0.02, label: '', proto: null },
+    { pct: 0.68, label: 'Amnezia', proto: 'amnezia' }
+  ];
+
+  api.get('/api/metrics/stability?period=24h').then(function(data) {
+    if (data.intervals && data.intervals.length > 0) {
+      // convert API intervals to segments
+      // TODO: implement when real data available
+    }
+    renderStability(qs('#chart-stability'), segments);
+  });
+}
+
+// ---- CLIENT TRAFFIC ----
+function loadClientTraffic() {
+  api.get('/api/metrics/traffic/clients').then(function(clients) {
+    if (!clients || clients.length === 0) return;
+    qs('#clients-section').style.display = 'block';
+    var tbody = qs('#table-clients tbody');
+    tbody.textContent = '';
+    clients.forEach(function(c) {
+      var tr = document.createElement('tr');
+      [c.ip, c.hostname || '--', formatBytes(c.traffic_in), formatBytes(c.traffic_out), formatTimeAgo(c.last_seen)].forEach(function(cell) {
+        var td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// ---- LOGS ----
+function loadLogs() {
+  api.get('/api/logs?limit=20').then(function(events) {
+    var timeline = qs('#logs-timeline');
+    timeline.textContent = '';
+    (events || []).forEach(function(e) {
+      var severity = 'info';
+      if (e.level === 'error') severity = 'error';
+      if (e.level === 'warn' || e.level === 'warning') severity = 'warn';
+
+      var item = el('div', 'timeline-item ' + severity);
+      item.appendChild(el('div', 'timeline-time', formatTime(e.time)));
+      item.appendChild(el('div', 'timeline-msg', e.message));
+      if (e.tunnel_id) {
+        item.appendChild(el('div', 'timeline-tunnel', e.tunnel_id));
+      }
+      timeline.appendChild(item);
+    });
+  });
+}
+
+/* ---- TIMELINE CSS (inline since it's only on dashboard) ---- */
+var style = document.createElement('style');
+style.textContent = [
+  '.timeline { position:relative; padding-left:24px; }',
+  '.timeline::before { content:""; position:absolute; left:7px; top:4px; bottom:4px; width:1px; background:var(--border); }',
+  '.timeline-item { position:relative; padding:6px 0 18px 20px; }',
+  '.timeline-item::before { content:""; position:absolute; left:-20px; top:12px; width:7px; height:7px; border-radius:50%; background:var(--border); }',
+  '.timeline-item.info::before { background:var(--status-active-text); box-shadow:0 0 6px rgba(90,154,90,0.4); }',
+  '.timeline-item.warn::before { background:#8a7a2a; box-shadow:0 0 6px rgba(138,122,42,0.4); }',
+  '.timeline-item.error::before { background:var(--status-down-text); box-shadow:0 0 6px rgba(154,74,74,0.4); }',
+  '.timeline-time { font-family:var(--font-mono); font-size:0.55rem; font-weight:300; color:var(--text-dim); }',
+  '.timeline-msg { font-family:var(--font-ui); font-size:0.8rem; color:var(--text); margin-top:2px; }',
+  '.timeline-tunnel { font-family:var(--font-mono); font-size:0.6rem; color:var(--text-muted); }'
+].join('\n');
+document.head.appendChild(style);
+</script>
+</body>
+</html>
