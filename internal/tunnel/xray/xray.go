@@ -87,6 +87,7 @@ func (w *wrapper) Start() error      { return w.client.Start() }
 func (w *wrapper) Stop() error       { return w.client.Stop() }
 func (w *wrapper) Running() bool     { return w.client.Running() }
 func (w *wrapper) Interface() string { return w.client.Interface() }
+func (w *wrapper) TunName() string   { return w.client.TunName() }
 func (w *wrapper) Mode() tunnel.Mode { return tunnel.ModeProxy }
 
 // errClient is returned when config parsing fails

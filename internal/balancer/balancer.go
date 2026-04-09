@@ -182,7 +182,7 @@ func ActivateTunnel(id string) {
 	activeID = id
 	mu.Unlock()
 
-	netutil.SetActiveRoute(ts.client.Interface())
+	netutil.SetActiveRoute(tunnel.RoutingInterface(ts.client))
 	store.AddEvent("info", "activate", id, "manually activated (was "+prev+")", 0)
 	log.Printf("[balancer] manually activated %s", id)
 }
@@ -324,7 +324,9 @@ func setup(cfg config.Config) {
 
 	// start DHCP
 	if cfg.Network.Output != "" {
-		dhcp.Start(cfg.Network.Output, gatewayIP)
+		if err := dhcp.Start(cfg.Network.Output, gatewayIP); err != nil {
+			log.Printf("[balancer] dhcp: %v", err)
+		}
 	}
 }
 
@@ -616,7 +618,7 @@ func idleWatcher(targetID string) {
 			mu.RUnlock()
 			return
 		}
-		iface := ts.client.Interface()
+		iface := tunnel.RoutingInterface(ts.client)
 		mu.RUnlock()
 
 		// check timeout
@@ -676,7 +678,7 @@ func doMigration(targetID string) {
 
 	prevActive := activeID
 	activeID = targetID
-	iface := ts.client.Interface()
+	iface := tunnel.RoutingInterface(ts.client)
 	mu.Unlock()
 
 	netutil.SetActiveRoute(iface)
@@ -813,7 +815,7 @@ func selectBest() {
 		activeID = best.id
 		ts := tunnels[best.id]
 
-		go netutil.SetActiveRoute(ts.client.Interface())
+		go netutil.SetActiveRoute(tunnel.RoutingInterface(ts.client))
 
 		if prev != "" {
 			log.Printf("[balancer] failover %s -> %s (latency %dms)", prev, best.id, best.latency)

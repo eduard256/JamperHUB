@@ -59,8 +59,8 @@ func main() {
 	xray.Init()
 
 	// Step 5. Init modules
-	balancer.Init()
 	dhcp.Init()
+	balancer.Init()
 
 	// Step 6. Start API server (serves UI + API)
 	api.Init(*listenAddr)

@@ -137,11 +137,13 @@ func (c *Client) Running() bool {
 	return c.running
 }
 
-func (c *Client) Interface() string { return c.iface }
-
-func (c *Client) SocksAddr() string {
+// Interface returns the SOCKS5 proxy address (for healthcheck)
+func (c *Client) Interface() string {
 	return fmt.Sprintf("socks5://127.0.0.1:%d", c.socksPort)
 }
+
+// TunName returns the tun2socks interface name (for routing)
+func (c *Client) TunName() string { return c.iface }
 
 // internals
 

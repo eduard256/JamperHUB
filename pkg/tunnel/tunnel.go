@@ -29,8 +29,23 @@ type Client interface {
 	Start() error
 	Stop() error
 	Running() bool
-	Interface() string // tun name or "socks5://127.0.0.1:PORT"
+	Interface() string // tun name for TUN mode, "socks5://127.0.0.1:PORT" for proxy mode
 	Mode() Mode
+}
+
+// TunNamer is implemented by proxy-type clients that have a separate tun interface for routing
+type TunNamer interface {
+	TunName() string
+}
+
+// RoutingInterface returns the tun interface name to use for ip route.
+// For TUN-type clients, this is Interface().
+// For proxy-type clients with tun2socks, this is TunName().
+func RoutingInterface(c Client) string {
+	if tn, ok := c.(TunNamer); ok {
+		return tn.TunName()
+	}
+	return c.Interface()
 }
 
 // Factory creates a Client from config data
