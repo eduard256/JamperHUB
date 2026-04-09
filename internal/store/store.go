@@ -165,9 +165,13 @@ func AddTrafficPoint(tunnelID string, trafficIn, trafficOut int64, latency *int,
 
 // GetSummary returns aggregate metrics
 func GetSummary() map[string]any {
-	// total traffic across all tunnels
+	// total traffic: latest value per tunnel (counters are cumulative)
 	var totalIn, totalOut int64
-	row := db.QueryRow(`SELECT COALESCE(SUM(traffic_in), 0), COALESCE(SUM(traffic_out), 0) FROM traffic_points`)
+	row := db.QueryRow(`
+		SELECT COALESCE(SUM(ti), 0), COALESCE(SUM(tout), 0) FROM (
+			SELECT tunnel_id, MAX(traffic_in) as ti, MAX(traffic_out) as tout
+			FROM traffic_points GROUP BY tunnel_id
+		)`)
 	row.Scan(&totalIn, &totalOut)
 
 	// failover count
@@ -192,11 +196,22 @@ func GetSummary() map[string]any {
 func GetTrafficHistory(period string) map[string]any {
 	interval, groupBy := periodToSQL(period)
 
+	// traffic_in/out are cumulative counters, so we take max per time bucket per tunnel
+	// then sum across tunnels, then compute delta between consecutive buckets
 	query := fmt.Sprintf(`
-		SELECT %s as t, SUM(traffic_in) as ti, SUM(traffic_out) as tout
-		FROM traffic_points
-		WHERE time > datetime('now', ?)
-		GROUP BY t ORDER BY t
+		WITH buckets AS (
+			SELECT %s as t, tunnel_id, MAX(traffic_in) as ti, MAX(traffic_out) as tout
+			FROM traffic_points
+			WHERE time > datetime('now', ?)
+			GROUP BY t, tunnel_id
+		),
+		totals AS (
+			SELECT t, SUM(ti) as ti, SUM(tout) as tout FROM buckets GROUP BY t
+		)
+		SELECT t,
+			ti - LAG(ti, 1, ti) OVER (ORDER BY t) as ti,
+			tout - LAG(tout, 1, tout) OVER (ORDER BY t) as tout
+		FROM totals ORDER BY t
 	`, groupBy)
 
 	return map[string]any{
@@ -216,7 +231,7 @@ func GetTunnelMetrics(period string) []map[string]any {
 	interval, _ := periodToSQL(period)
 	return queryMaps(`
 		SELECT tunnel_id,
-			SUM(traffic_in) as traffic_in, SUM(traffic_out) as traffic_out,
+			MAX(traffic_in) as traffic_in, MAX(traffic_out) as traffic_out,
 			AVG(latency) as avg_latency, MIN(latency) as min_latency, MAX(latency) as max_latency
 		FROM traffic_points
 		WHERE time > datetime('now', ?) AND latency IS NOT NULL
