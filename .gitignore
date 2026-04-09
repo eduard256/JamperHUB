@@ -1,0 +1,6 @@
+/jamperhub
+*.exe
+*.db
+*.tmp
+/data/
+/bin/
