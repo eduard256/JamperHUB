@@ -210,6 +210,11 @@ func ensureRule(args ...string) {
 	run("ip", cmdArgs...)
 }
 
+// GetDefaultGW returns the default gateway IP from the main routing table
+func GetDefaultGW() string {
+	return getDefaultGateway()
+}
+
 func getDefaultGateway() string {
 	out, err := exec.Command("ip", "route", "show", "default").CombinedOutput()
 	if err != nil {

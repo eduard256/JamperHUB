@@ -31,7 +31,7 @@ func NewClient(id, binPath, configData string) (*Client, error) {
 	return &Client{
 		id:      id,
 		binPath: binPath,
-		iface:   "awg-" + id,
+		iface:   "awg-" + shortID(id),
 		cfg:     cfg,
 	}, nil
 }
@@ -172,6 +172,15 @@ func (c *Client) setupNetwork() error {
 	}
 
 	return nil
+}
+
+// shortID returns first 8 chars for interface naming (Linux limit 15 chars: "awg-" + 8 = 12)
+func shortID(id string) string {
+	id = strings.TrimPrefix(id, "t-")
+	if len(id) > 8 {
+		return id[:8]
+	}
+	return id
 }
 
 func run(name string, args ...string) error {
