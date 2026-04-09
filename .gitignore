@@ -4,3 +4,8 @@
 *.tmp
 /data/
 /bin/
+/embed/amd64/*.gz
+/embed/amd64/amneziawg-go
+/embed/amd64/awg*
+/embed/amd64/xray
+/embed/amd64/tun2socks

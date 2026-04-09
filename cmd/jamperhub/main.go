@@ -8,12 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"path/filepath"
+
 	"github.com/eduard256/jamperhub/internal/api"
 	"github.com/eduard256/jamperhub/internal/balancer"
 	"github.com/eduard256/jamperhub/internal/dhcp"
 	"github.com/eduard256/jamperhub/internal/store"
 	"github.com/eduard256/jamperhub/internal/tunnel/amnezia"
 	"github.com/eduard256/jamperhub/internal/tunnel/xray"
+	"github.com/eduard256/jamperhub/pkg/bindata"
 	"github.com/eduard256/jamperhub/pkg/config"
 )
 
@@ -32,27 +35,34 @@ func main() {
 
 	log.Printf("[main] JamperHUB v%s starting, data=%s", version, *dataPath)
 
-	// Step 1. Load config
+	// Step 1. Extract embedded binaries
+	binDir := filepath.Join(*dataPath, "bin")
+	if err := bindata.Extract(binDir); err != nil {
+		log.Fatalf("[main] bindata: %v", err)
+	}
+	log.Printf("[main] binaries ready in %s", binDir)
+
+	// Step 2. Load config
 	if err := config.Init(*dataPath); err != nil {
 		log.Fatalf("[main] config: %v", err)
 	}
 	log.Printf("[main] config loaded")
 
-	// Step 2. Open database
+	// Step 3. Open database
 	if err := store.Init(*dataPath); err != nil {
 		log.Fatalf("[main] store: %v", err)
 	}
 	log.Printf("[main] database ready")
 
-	// Step 3. Register tunnel types
+	// Step 4. Register tunnel types
 	amnezia.Init()
 	xray.Init()
 
-	// Step 4. Init modules
+	// Step 5. Init modules
 	balancer.Init()
 	dhcp.Init()
 
-	// Step 5. Start API server (serves UI + API)
+	// Step 6. Start API server (serves UI + API)
 	api.Init(*listenAddr)
 
 	log.Printf("[main] ready, listening on %s", *listenAddr)
