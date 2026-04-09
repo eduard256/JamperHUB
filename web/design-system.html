@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JamperHUB Design System</title>
+<link rel="stylesheet" href="lib/uplot.min.css">
+<style>
+/* ============================================
+   FONTS
+   ============================================ */
+@font-face {
+  font-family: 'Knewave';
+  src: url('fonts/knewave.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Dosis';
+  src: url('fonts/dosis.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Martian Mono';
+  src: url('fonts/martian-mono.woff2') format('woff2');
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+  --bg: #1c1c1b;
+  --bg-card: #242423;
+  --bg-card-hover: #2a2a29;
+  --border: #2e2e2d;
+  --border-subtle: #353534;
+  --accent: #4a0f0d;
+  --accent-glow: rgba(74, 15, 13, 0.4);
+  --accent-glow-strong: rgba(74, 15, 13, 0.7);
+  --accent-light: #6b1a17;
+  --text: #e3e3de;
+  --text-bright: #f5f6f7;
+  --text-muted: #7a7a74;
+  --text-dim: #555550;
+  --status-active: #1a2e1a;
+  --status-active-border: #2a4a2a;
+  --status-active-text: #5a9a5a;
+  --status-ready: #1e2a1e;
+  --status-ready-text: #4a7a4a;
+  --status-down: #2e1a1a;
+  --status-down-border: #4a2a2a;
+  --status-down-text: #9a4a4a;
+  --status-disabled-text: #555550;
+  /* protocol colors */
+  --color-amnezia: #5a9a5a;
+  --color-amnezia-fill: rgba(90, 154, 90, 0.08);
+  --color-xray: #7a8aaa;
+  --color-xray-fill: rgba(122, 138, 170, 0.08);
+  --color-openvpn: #aa8a5a;
+  --color-openvpn-fill: rgba(170, 138, 90, 0.08);
+  --color-socks5: #8a6a9a;
+  --color-socks5-fill: rgba(138, 106, 154, 0.08);
+  --color-traffic-in: #5a9a5a;
+  --color-traffic-in-fill: rgba(90, 154, 90, 0.08);
+  --color-traffic-out: #8a7a2a;
+  --color-traffic-out-fill: rgba(138, 122, 42, 0.06);
+  --font-logo: 'Knewave', cursive;
+  --font-ui: 'Dosis', sans-serif;
+  --font-mono: 'Martian Mono', monospace;
+  --radius: 8px;
+  --radius-pill: 100px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 400;
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* noise texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+  background-size: 128px 128px;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--text-bright);
+}
+
+/* ============================================
+   DESIGN SYSTEM PAGE LAYOUT
+   ============================================ */
+.ds-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 40px 120px;
+}
+
+.ds-section {
+  margin-bottom: 80px;
+}
+
+.ds-section-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ds-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
+
+.ds-col {
+  flex: 1;
+  min-width: 280px;
+}
+
+.ds-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 300;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* ============================================
+   LOGO
+   ============================================ */
+.logo {
+  font-family: var(--font-logo);
+  font-size: 2.8rem;
+  color: var(--text-bright);
+  -webkit-text-stroke: 1px var(--accent);
+  text-shadow:
+    0 0 30px var(--accent-glow),
+    0 0 60px rgba(74, 15, 13, 0.2);
+  letter-spacing: 2px;
+  user-select: none;
+  transition: var(--transition-slow);
+}
+
+.logo:hover {
+  text-shadow:
+    0 0 40px var(--accent-glow-strong),
+    0 0 80px var(--accent-glow),
+    0 0 120px rgba(74, 15, 13, 0.15);
+}
+
+.logo-small {
+  font-size: 1.6rem;
+}
+
+.logo-version {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 300;
+  color: var(--text-dim);
+  margin-left: 8px;
+  vertical-align: super;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+.t-heading { font-family: var(--font-ui); font-weight: 600; color: var(--text-bright); }
+.t-h1 { font-size: 1.8rem; letter-spacing: -0.5px; }
+.t-h2 { font-size: 1.3rem; letter-spacing: -0.3px; }
+.t-h3 { font-size: 1rem; }
+.t-body { font-family: var(--font-ui); font-weight: 400; color: var(--text); }
+.t-body-light { font-family: var(--font-ui); font-weight: 300; color: var(--text-muted); }
+.t-mono { font-family: var(--font-mono); font-weight: 400; color: var(--text); }
+.t-mono-sm { font-family: var(--font-mono); font-weight: 400; font-size: 0.75rem; color: var(--text-muted); }
+
+.t-data {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 2rem;
+  color: var(--text-bright);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.t-data-unit {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 28px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 0 12px var(--accent-glow), 0 0 4px rgba(74, 15, 13, 0.2);
+}
+
+.btn:hover {
+  color: var(--text-bright);
+  border-color: var(--accent-light);
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px var(--accent-glow-strong), 0 0 8px var(--accent-glow);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.btn-sm { padding: 6px 18px; font-size: 0.75rem; }
+.btn-lg { padding: 14px 40px; font-size: 0.95rem; letter-spacing: 1px; }
+
+.btn-ghost {
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.btn-ghost:hover {
+  border-color: var(--text-muted);
+  box-shadow: 0 0 12px rgba(255,255,255,0.03);
+}
+
+.btn-danger {
+  border-color: var(--status-down-border);
+  color: var(--status-down-text);
+  box-shadow: 0 0 10px rgba(154, 74, 74, 0.15);
+}
+
+.btn-danger:hover {
+  border-color: #5a3333;
+  color: #c06060;
+  box-shadow: 0 0 18px rgba(154, 74, 74, 0.3);
+}
+
+.btn-success {
+  border-color: var(--status-active-border);
+  color: var(--status-active-text);
+  box-shadow: 0 0 10px rgba(90, 154, 90, 0.15);
+}
+
+.btn-success:hover {
+  border-color: #3a6a3a;
+  color: #7aba7a;
+  box-shadow: 0 0 18px rgba(90, 154, 90, 0.3);
+}
+
+.btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: var(--transition);
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-subtle);
+}
+
+/* ============================================
+   METRIC CARD
+   ============================================ */
+.metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 170px;
+  transition: var(--transition);
+}
+
+.metric-card:hover { border-color: var(--border-subtle); }
+
+.metric-label {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 1.8rem;
+  color: var(--text-bright);
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.metric-unit {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.metric-sparkline {
+  margin-top: 8px;
+  height: 30px;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ============================================
+   TUNNEL CARD
+   ============================================ */
+.tunnel-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 20px 20px 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.tunnel-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+  transition: var(--transition);
+}
+
+.tunnel-card.active::before { background: var(--status-active-text); box-shadow: 0 0 8px rgba(90,154,90,0.4); }
+.tunnel-card.ready::before { background: var(--status-ready-text); }
+.tunnel-card.down::before { background: var(--status-down-text); box-shadow: 0 0 8px rgba(154,74,74,0.3); }
+.tunnel-card.disabled::before { background: var(--text-dim); }
+
+.tunnel-card.active { background: linear-gradient(90deg, var(--status-active) 0%, var(--bg-card) 30%); }
+.tunnel-card.down { background: linear-gradient(90deg, var(--status-down) 0%, var(--bg-card) 30%); }
+.tunnel-card.disabled { opacity: 0.5; }
+
+.tunnel-card:hover { border-color: var(--border-subtle); }
+
+.tunnel-info { display: flex; flex-direction: column; gap: 2px; }
+
+.tunnel-name {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-bright);
+}
+
+.tunnel-meta {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 300;
+  color: var(--text-muted);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.proto-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.proto-dot.amnezia { background: var(--color-amnezia); box-shadow: 0 0 4px rgba(90,154,90,0.4); }
+.proto-dot.xray { background: var(--color-xray); box-shadow: 0 0 4px rgba(122,138,170,0.4); }
+.proto-dot.openvpn { background: var(--color-openvpn); box-shadow: 0 0 4px rgba(170,138,90,0.4); }
+.proto-dot.socks5 { background: var(--color-socks5); box-shadow: 0 0 4px rgba(138,106,154,0.4); }
+
+.tunnel-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.tunnel-latency {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: var(--text-bright);
+}
+
+.tunnel-speed {
+  font-family: var(--font-mono);
+  font-weight: 300;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.state-active { color: var(--status-active-text); }
+.state-ready { color: var(--status-ready-text); }
+.state-down { color: var(--status-down-text); }
+.state-disabled { color: var(--status-disabled-text); }
+
+/* ============================================
+   ARC GAUGE
+   ============================================ */
+.arc-gauge {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arc-gauge svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-135deg);
+}
+
+.arc-bg {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.arc-fill {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.arc-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: 1;
+}
+
+.arc-value {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 1.4rem;
+  color: var(--text-bright);
+}
+
+.arc-label {
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+
+/* ============================================
+   DHCP RANGE BAR
+   ============================================ */
+.dhcp-bar {
+  position: relative;
+  height: 40px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.dhcp-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, var(--status-active) 0%, transparent 100%);
+  border-radius: var(--radius-pill);
+  transition: width 1s ease;
+}
+
+.dhcp-bar-labels {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+
+.dhcp-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--status-active-text);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 6px rgba(90, 154, 90, 0.5);
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 3;
+}
+
+.dhcp-dot:hover {
+  transform: translateY(-50%) scale(1.8);
+  box-shadow: 0 0 14px rgba(90, 154, 90, 0.9);
+}
+
+.dhcp-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text);
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 100;
+  line-height: 1.6;
+}
+
+.dhcp-dot:hover .dhcp-tooltip { display: block; }
+
+/* ============================================
+   NETWORK STATUS BAR
+   ============================================ */
+.net-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 300;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.net-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.net-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-active-text);
+  box-shadow: 0 0 4px rgba(90,154,90,0.5);
+  flex-shrink: 0;
+}
+
+.net-dot.down {
+  background: var(--status-down-text);
+  box-shadow: 0 0 4px rgba(154,74,74,0.5);
+}
+
+.net-sep { color: var(--border); }
+
+/* ============================================
+   TIMELINE
+   ============================================ */
+.timeline {
+  position: relative;
+  padding-left: 24px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: var(--border);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 6px 0 22px 20px;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 12px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.timeline-item.info::before { background: var(--status-active-text); box-shadow: 0 0 6px rgba(90,154,90,0.4); }
+.timeline-item.warn::before { background: #8a7a2a; box-shadow: 0 0 6px rgba(138,122,42,0.4); }
+.timeline-item.error::before { background: var(--status-down-text); box-shadow: 0 0 6px rgba(154,74,74,0.4); }
+
+.timeline-time {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 300;
+  color: var(--text-dim);
+}
+
+.timeline-msg {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.timeline-tunnel {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   MIGRATION BANNER
+   ============================================ */
+.migration-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px var(--accent-glow);
+  flex-wrap: wrap;
+}
+
+.migration-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--accent-glow), transparent, var(--accent-glow));
+  background-size: 200% 100%;
+  animation: migration-flow 2s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+@keyframes migration-flow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.migration-from, .migration-to {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--text);
+  position: relative;
+  z-index: 1;
+}
+
+.migration-arrow { flex-shrink: 0; z-index: 1; color: var(--accent-light); }
+
+.migration-arrow svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  animation: arrow-move 1.5s ease-in-out infinite;
+}
+
+@keyframes arrow-move {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(4px); }
+}
+
+.migration-reason {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  z-index: 1;
+  margin-left: auto;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 52px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  z-index: 1000;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.sidebar:hover { width: 180px; }
+
+.sidebar-logo {
+  font-family: var(--font-logo);
+  font-size: 1.1rem;
+  color: var(--text-bright);
+  -webkit-text-stroke: 0.5px var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow);
+  margin-bottom: 32px;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
+  text-align: center;
+}
+
+.sidebar-nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+}
+
+.sidebar-nav-item:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.02);
+}
+
+.sidebar-nav-item.active { color: var(--text-bright); }
+
+.sidebar-nav-item.active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 20px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  border-radius: 1px;
+}
+
+.sidebar-nav-item svg {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.sidebar-nav-item span {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sidebar:hover .sidebar-nav-item span { opacity: 1; }
+
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-active-text);
+  box-shadow: 0 0 8px rgba(90,154,90,0.5);
+  animation: pulse 2s infinite;
+}
+
+.pulse-dot.offline {
+  background: var(--status-down-text);
+  box-shadow: 0 0 8px rgba(154,74,74,0.5);
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(90,154,90,0.5); }
+  50% { box-shadow: 0 0 16px rgba(90,154,90,0.8); }
+}
+
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 8px rgba(154,74,74,0.5); }
+  50% { box-shadow: 0 0 16px rgba(154,74,74,0.8); }
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+.input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  width: 100%;
+  outline: none;
+  transition: var(--transition);
+}
+
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.input::placeholder { color: var(--text-dim); }
+.input-mono { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 300; }
+textarea.input { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+.select {
+  appearance: none;
+  background: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%237a7a74' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 40px 10px 16px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+
+.select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: var(--border);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle.on { background: var(--status-active-border); }
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: var(--transition);
+}
+
+.toggle.on::after {
+  left: 21px;
+  background: var(--status-active-text);
+  box-shadow: 0 0 6px rgba(90,154,90,0.4);
+}
+
+/* ============================================
+   TAGS
+   ============================================ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.tag-active { color: var(--status-active-text); border-color: var(--status-active-border); background: var(--status-active); }
+.tag-ready { color: var(--status-ready-text); border-color: rgba(74, 122, 74, 0.3); background: var(--status-ready); }
+.tag-down { color: var(--status-down-text); border-color: var(--status-down-border); background: var(--status-down); }
+.tag-type { color: var(--text-muted); border-color: var(--border); background: transparent; }
+
+/* ============================================
+   CHARTS
+   ============================================ */
+.chart-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+}
+
+.chart-title {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.chart-period {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  display: flex;
+  gap: 4px;
+}
+
+.chart-period-btn {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.chart-period-btn.active {
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.chart-period-btn:hover:not(.active) { border-color: var(--text-dim); color: var(--text-muted); }
+
+.uplot .u-legend {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 300;
+  color: var(--text-muted);
+  padding: 8px 0 0;
+  text-align: left;
+}
+
+.uplot .u-legend .u-series {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 16px;
+}
+
+.uplot .u-legend .u-marker {
+  width: 8px;
+  height: 2px;
+  border-radius: 1px;
+  display: inline-block;
+}
+
+.uplot .u-legend .u-value {
+  font-weight: 500;
+  color: var(--text-bright);
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 100;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  pointer-events: none;
+  transition: left 0.08s ease, top 0.08s ease;
+  min-width: 120px;
+}
+
+.chart-tooltip-time {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-weight: 300;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.chart-tooltip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chart-tooltip-label {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.chart-tooltip-val {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-bright);
+}
+
+/* ============================================
+   CHARTS GRID (2 per row desktop, 1 mobile)
+   ============================================ */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .charts-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================
+   SKELETON
+   ============================================ */
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--bg-card-hover) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in { animation: fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.1s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.2s; }
+.delay-5 { animation-delay: 0.25s; }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .ds-page { padding: 24px 16px 100px; margin-right: 0; }
+  .ds-row { flex-direction: column; }
+  .ds-col { min-width: 100%; }
+
+  .sidebar {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 56px;
+    flex-direction: row;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 0;
+    justify-content: space-around;
+  }
+
+  .sidebar:hover { width: 100%; }
+  .sidebar-logo { display: none; }
+  .sidebar-bottom { display: none; }
+
+  .sidebar-nav-item {
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 0;
+    justify-content: center;
+  }
+
+  .sidebar-nav-item span { opacity: 1; font-size: 0.55rem; }
+
+  .sidebar-nav-item.active::after {
+    top: 0;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 2px;
+  }
+
+  .migration-banner { flex-direction: column; text-align: center; }
+  .migration-reason { margin-left: 0; }
+  .net-status { font-size: 0.55rem; gap: 6px; padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">J</div>
+  <a class="sidebar-nav-item active">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Dashboard</span>
+  </a>
+  <a class="sidebar-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span>Tunnels</span>
+  </a>
+  <a class="sidebar-nav-item">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9c.03-.64-.36-1.22-.93-1.52l-.06-.06a2 2 0 112.83-2.83l.06.06c.42.42 1 .56 1.52.43.53-.14.97-.55 1.1-1.08V3a2 2 0 014 0v.09c.13.53.57.94 1.1 1.08.52.13 1.1-.01 1.52-.43l.06-.06a2 2 0 112.83 2.83l-.06.06c-.57.3-.96.88-.93 1.52A1.65 1.65 0 0019.51 9H21a2 2 0 010 4h-.09c-.53.13-.94.57-1.08 1.1-.13.52.01 1.1.43 1.52z"/></svg>
+    <span>Settings</span>
+  </a>
+  <a class="sidebar-nav-item">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Logs</span>
+  </a>
+  <div class="sidebar-bottom">
+    <div class="pulse-dot"></div>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div class="ds-page" style="margin-right: 52px;">
+
+  <!-- LOGO -->
+  <section class="ds-section">
+    <div class="ds-section-title">Logo</div>
+    <div class="ds-row" style="align-items:baseline;gap:40px;">
+      <div class="logo">JamperHUB<span class="logo-version">0.0.1</span></div>
+      <div class="logo logo-small">JamperHUB</div>
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHY -->
+  <section class="ds-section">
+    <div class="ds-section-title">Typography</div>
+    <div class="ds-row">
+      <div class="ds-col">
+        <div class="ds-label">Headings - Dosis</div>
+        <div class="t-heading t-h1">Dashboard Overview</div>
+        <div class="t-heading t-h2" style="margin-top:8px">Tunnel Configuration</div>
+        <div class="t-heading t-h3" style="margin-top:8px">Network Settings</div>
+      </div>
+      <div class="ds-col">
+        <div class="ds-label">Data - Martian Mono</div>
+        <div class="t-data">57.8<span class="t-data-unit">Mbps</span></div>
+        <div class="t-mono" style="margin-top:12px">181ms / 198.18.0.101</div>
+        <div class="t-mono-sm" style="margin-top:8px">t-5be3c8339a55 / awg-5be3c833</div>
+      </div>
+      <div class="ds-col">
+        <div class="ds-label">Body - Dosis</div>
+        <div class="t-body">Tunnel connected successfully</div>
+        <div class="t-body-light" style="margin-top:8px">Waiting for network on input interface</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section class="ds-section">
+    <div class="ds-section-title">Buttons</div>
+    <div class="ds-row">
+      <button class="btn btn-lg">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Tunnel
+      </button>
+      <button class="btn">Restart</button>
+      <button class="btn btn-sm">Activate</button>
+    </div>
+    <div class="ds-row">
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-success">Apply</button>
+      <button class="btn btn-danger">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        Delete
+      </button>
+    </div>
+  </section>
+
+  <!-- TAGS -->
+  <section class="ds-section">
+    <div class="ds-section-title">Tags</div>
+    <div class="ds-row">
+      <span class="tag tag-active">active</span>
+      <span class="tag tag-ready">ready</span>
+      <span class="tag tag-down">down</span>
+      <span class="tag tag-type">amnezia</span>
+      <span class="tag tag-type">xray</span>
+      <span class="tag tag-type">tun</span>
+      <span class="tag tag-type">proxy</span>
+    </div>
+  </section>
+
+  <!-- METRIC CARDS -->
+  <section class="ds-section">
+    <div class="ds-section-title">Metric Cards</div>
+    <div class="ds-row">
+      <div class="metric-card animate-in delay-1">
+        <div class="metric-label">Active Tunnel</div>
+        <div class="metric-value">181<span class="metric-unit">ms</span></div>
+        <div class="metric-sparkline" id="spark-latency"></div>
+      </div>
+      <div class="metric-card animate-in delay-2">
+        <div class="metric-label">Speed</div>
+        <div class="metric-value">57.8<span class="metric-unit">Mbps</span></div>
+        <div class="metric-sparkline" id="spark-speed"></div>
+      </div>
+      <div class="metric-card animate-in delay-3">
+        <div class="metric-label">Tunnels</div>
+        <div class="metric-value">2 / 2<span class="metric-unit">up</span></div>
+      </div>
+      <div class="metric-card animate-in delay-4">
+        <div class="metric-label">DHCP Leases</div>
+        <div class="metric-value">1<span class="metric-unit">device</span></div>
+      </div>
+      <div class="metric-card animate-in delay-5">
+        <div class="metric-label">Uptime</div>
+        <div class="metric-value">55<span class="metric-unit">min</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TUNNEL CARDS -->
+  <section class="ds-section">
+    <div class="ds-section-title">Tunnel Cards</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:500px;">
+      <div class="tunnel-card active">
+        <div class="tunnel-info">
+          <div class="tunnel-name">Amnezia WG v2</div>
+          <div class="tunnel-meta"><span class="proto-dot amnezia"></span><span>amnezia</span><span>tun</span><span class="state-active">active</span></div>
+        </div>
+        <div class="tunnel-stats">
+          <div class="tunnel-latency">181<span class="t-data-unit">ms</span></div>
+          <div class="tunnel-speed">57.8 Mbps</div>
+        </div>
+      </div>
+      <div class="tunnel-card ready">
+        <div class="tunnel-info">
+          <div class="tunnel-name">Xray VLESS Reality</div>
+          <div class="tunnel-meta"><span class="proto-dot xray"></span><span>xray</span><span>proxy</span><span class="state-ready">ready</span></div>
+        </div>
+        <div class="tunnel-stats">
+          <div class="tunnel-latency">330<span class="t-data-unit">ms</span></div>
+          <div class="tunnel-speed">43.0 Mbps</div>
+        </div>
+      </div>
+      <div class="tunnel-card down">
+        <div class="tunnel-info">
+          <div class="tunnel-name">Backup OpenVPN</div>
+          <div class="tunnel-meta"><span class="proto-dot openvpn"></span><span>openvpn</span><span>tun</span><span class="state-down">down</span></div>
+        </div>
+        <div class="tunnel-stats">
+          <div class="tunnel-latency" style="color:var(--status-down-text)">---</div>
+          <div class="tunnel-speed">timeout</div>
+        </div>
+      </div>
+      <div class="tunnel-card disabled">
+        <div class="tunnel-info">
+          <div class="tunnel-name">SOCKS5 Fallback</div>
+          <div class="tunnel-meta"><span class="proto-dot socks5"></span><span>socks5</span><span>proxy</span><span class="state-disabled">disabled</span></div>
+        </div>
+        <div class="tunnel-stats">
+          <div class="tunnel-latency" style="color:var(--text-dim)">---</div>
+          <div class="tunnel-speed">---</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARC GAUGES -->
+  <section class="ds-section">
+    <div class="ds-section-title">Arc Gauges</div>
+    <div class="ds-row" id="gauges-row"></div>
+  </section>
+
+  <!-- DHCP RANGE -->
+  <section class="ds-section">
+    <div class="ds-section-title">DHCP Range</div>
+    <div style="max-width:600px;">
+      <div class="dhcp-bar">
+        <div class="dhcp-bar-fill" style="width:40%"></div>
+        <div class="dhcp-dot" style="left:18%"><div class="dhcp-tooltip">198.18.0.120<br>iPhone-John<br>aa:bb:cc:dd:ee:01</div></div>
+        <div class="dhcp-dot" style="left:52%"><div class="dhcp-tooltip">198.18.0.155<br>MacBook-Pro<br>aa:bb:cc:dd:ee:02</div></div>
+        <div class="dhcp-dot" style="left:82%"><div class="dhcp-tooltip">198.18.0.180<br>test<br>bc:24:11:4e:b9:27</div></div>
+        <div class="dhcp-bar-labels"><span>.100</span><span>.200</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NETWORK STATUS -->
+  <section class="ds-section">
+    <div class="ds-section-title">Network Status</div>
+    <div class="net-status" style="max-width:700px;">
+      <div class="net-status-item"><div class="net-dot"></div><span>enp6s18</span></div>
+      <span class="net-sep">/</span>
+      <span>10.0.1.101</span>
+      <span class="net-sep">/</span>
+      <span>gw 10.0.1.1</span>
+      <span class="net-sep">&#8594;</span>
+      <div class="net-status-item"><div class="net-dot"></div><span>enp6s19</span></div>
+      <span class="net-sep">/</span>
+      <span>198.18.0.1/24</span>
+    </div>
+  </section>
+
+  <!-- MIGRATION BANNER -->
+  <section class="ds-section">
+    <div class="ds-section-title">Migration Banner</div>
+    <div class="migration-banner" style="max-width:600px;">
+      <div class="migration-from">Amnezia WG v2</div>
+      <div class="migration-arrow"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      <div class="migration-to">Xray VLESS Reality</div>
+      <div class="migration-reason">+74% faster</div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="ds-section">
+    <div class="ds-section-title">Timeline</div>
+    <div class="timeline" style="max-width:500px;">
+      <div class="timeline-item info">
+        <div class="timeline-time">14:17:22</div>
+        <div class="timeline-msg">Connected, latency 181ms</div>
+        <div class="timeline-tunnel">Amnezia WG v2</div>
+      </div>
+      <div class="timeline-item info">
+        <div class="timeline-time">14:17:22</div>
+        <div class="timeline-msg">Connected, latency 383ms</div>
+        <div class="timeline-tunnel">Xray VLESS Reality</div>
+      </div>
+      <div class="timeline-item warn">
+        <div class="timeline-time">14:16:57</div>
+        <div class="timeline-msg">Reconnecting after timeout</div>
+        <div class="timeline-tunnel">Amnezia WG v2</div>
+      </div>
+      <div class="timeline-item error">
+        <div class="timeline-time">14:09:02</div>
+        <div class="timeline-msg">Timeout waiting for socket</div>
+        <div class="timeline-tunnel">Amnezia WG v2</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMS -->
+  <section class="ds-section">
+    <div class="ds-section-title">Form Elements</div>
+    <div class="ds-row">
+      <div class="ds-col">
+        <div class="ds-label">Text Input</div>
+        <input class="input" placeholder="Tunnel name">
+      </div>
+      <div class="ds-col">
+        <div class="ds-label">Mono Input</div>
+        <input class="input input-mono" placeholder="198.18.0.0/24">
+      </div>
+      <div class="ds-col">
+        <div class="ds-label">Select</div>
+        <select class="select"><option>amnezia</option><option>xray</option></select>
+      </div>
+    </div>
+    <div class="ds-row">
+      <div class="ds-col">
+        <div class="ds-label">Textarea</div>
+        <textarea class="input input-mono" rows="4" placeholder="Paste VPN config...">[Interface]
+PrivateKey = abc123...
+Address = 10.8.0.2/24
+
+[Peer]
+PublicKey = xyz789...</textarea>
+      </div>
+      <div class="ds-col">
+        <div class="ds-label">Toggles</div>
+        <div style="display:flex;flex-direction:column;gap:16px;margin-top:4px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            <span class="t-body">DHCP Enabled</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+            <span class="t-body">Fallback Direct</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARTS: PER-TUNNEL LATENCY -->
+  <section class="ds-section">
+    <div class="ds-section-title">Charts - Per-Tunnel Latency</div>
+    <div id="charts-latency" class="charts-grid"></div>
+  </section>
+
+  <!-- CHARTS: PER-TUNNEL SPEED -->
+  <section class="ds-section">
+    <div class="ds-section-title">Charts - Per-Tunnel Speed</div>
+    <div id="charts-speed" class="charts-grid"></div>
+  </section>
+
+  <!-- CHART: TOTAL TRAFFIC -->
+  <section class="ds-section">
+    <div class="ds-section-title">Chart - Total Traffic</div>
+    <div class="chart-container">
+      <div class="chart-title">Traffic volume</div>
+      <div class="chart-period">
+        <button class="chart-period-btn active">24h</button>
+        <button class="chart-period-btn">7d</button>
+      </div>
+      <div id="chart-traffic"></div>
+    </div>
+  </section>
+
+  <!-- CHART: STABILITY -->
+  <section class="ds-section">
+    <div class="ds-section-title">Chart - Stability Timeline</div>
+    <div class="chart-container">
+      <div class="chart-title">System stability</div>
+      <div id="chart-stability" style="height:60px"></div>
+    </div>
+  </section>
+
+  <!-- SKELETON -->
+  <section class="ds-section">
+    <div class="ds-section-title">Loading States</div>
+    <div class="ds-row">
+      <div class="metric-card">
+        <div class="skeleton" style="width:60px;height:12px"></div>
+        <div class="skeleton" style="width:100px;height:28px;margin-top:8px"></div>
+        <div class="skeleton" style="width:100%;height:30px;margin-top:8px"></div>
+      </div>
+      <div class="metric-card">
+        <div class="skeleton" style="width:80px;height:12px"></div>
+        <div class="skeleton" style="width:70px;height:28px;margin-top:8px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PALETTE -->
+  <section class="ds-section">
+    <div class="ds-section-title">Palette</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#1c1c1b;border:1px solid var(--border)"></div><span class="t-mono-sm">#1c1c1b bg</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#242423;border:1px solid var(--border)"></div><span class="t-mono-sm">#242423 card</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#4a0f0d"></div><span class="t-mono-sm">#4a0f0d accent</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#e3e3de"></div><span class="t-mono-sm">#e3e3de text</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#f5f6f7"></div><span class="t-mono-sm">#f5f6f7 bright</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#1a2e1a;border:1px solid #2a4a2a"></div><span class="t-mono-sm">#1a2e1a active</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:6px;background:#2e1a1a;border:1px solid #4a2a2a"></div><span class="t-mono-sm">#2e1a1a down</span></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- SCRIPTS -->
+<script src="lib/uplot.min.js"></script>
+<script>
+// ---- MOCK DATA GENERATORS ----
+function mockTime(count, intervalSec) {
+  var now = Math.floor(Date.now() / 1000);
+  var out = new Array(count);
+  for (var i = 0; i < count; i++) out[i] = now - (count - i) * intervalSec;
+  return out;
+}
+
+function mockValues(count, base, variance) {
+  var out = new Array(count);
+  for (var i = 0; i < count; i++) out[i] = base + Math.random() * variance;
+  return out;
+}
+
+// ---- SPARKLINES (SVG) ----
+function renderSparkline(container, data, color) {
+  var w = container.clientWidth || 120;
+  var h = 30;
+  var max = -Infinity, min = Infinity;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i] > max) max = data[i];
+    if (data[i] < min) min = data[i];
+  }
+  var range = max - min || 1;
+  var pts = [];
+  for (var i = 0; i < data.length; i++) {
+    var x = (i / (data.length - 1)) * w;
+    var y = h - ((data[i] - min) / range) * (h - 4) - 2;
+    pts.push(x + ',' + y);
+  }
+  var gid = 'sg' + Math.random().toString(36).slice(2, 8);
+
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.style.width = '100%';
+  svg.style.height = '100%';
+
+  var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  var grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+  grad.setAttribute('id', gid);
+  grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+  grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
+  var s1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  s1.setAttribute('offset', '0%'); s1.setAttribute('stop-color', color); s1.setAttribute('stop-opacity', '0.3');
+  var s2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  s2.setAttribute('offset', '100%'); s2.setAttribute('stop-color', color); s2.setAttribute('stop-opacity', '0');
+  grad.appendChild(s1); grad.appendChild(s2);
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  var area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  area.setAttribute('d', 'M' + pts[0] + ' ' + pts.slice(1).map(function(p){return 'L'+p}).join(' ') + ' L' + w + ',' + h + ' L0,' + h + ' Z');
+  area.setAttribute('fill', 'url(#' + gid + ')');
+  svg.appendChild(area);
+
+  var line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  line.setAttribute('points', pts.join(' '));
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '1.5');
+  line.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(line);
+
+  container.appendChild(svg);
+}
+
+// ---- ARC GAUGE ----
+function renderArcGauge(container, value, max, label) {
+  var r = 58, cx = 70, cy = 70;
+  var circ = 2 * Math.PI * r;
+  var arcLen = circ * 0.75;
+  var pct = Math.min(value / max, 1);
+  var offset = arcLen * (1 - pct);
+  var hue = pct * 120;
+  var color = 'hsl(' + hue + ', 35%, 40%)';
+
+  var el = document.createElement('div');
+  el.className = 'arc-gauge';
+
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 140 140');
+
+  var bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bg.setAttribute('class', 'arc-bg');
+  bg.setAttribute('cx', cx); bg.setAttribute('cy', cy); bg.setAttribute('r', r);
+  bg.setAttribute('stroke-dasharray', arcLen + ' ' + circ);
+  svg.appendChild(bg);
+
+  var fill = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  fill.setAttribute('class', 'arc-fill');
+  fill.setAttribute('cx', cx); fill.setAttribute('cy', cy); fill.setAttribute('r', r);
+  fill.setAttribute('stroke', color);
+  fill.setAttribute('stroke-dasharray', arcLen + ' ' + circ);
+  fill.setAttribute('stroke-dashoffset', offset);
+  fill.style.filter = 'drop-shadow(0 0 6px ' + color + ')';
+  svg.appendChild(fill);
+
+  el.appendChild(svg);
+
+  var center = document.createElement('div');
+  center.className = 'arc-center';
+  var valEl = document.createElement('div');
+  valEl.className = 'arc-value';
+  valEl.textContent = value;
+  var labEl = document.createElement('div');
+  labEl.className = 'arc-label';
+  labEl.textContent = label;
+  center.appendChild(valEl);
+  center.appendChild(labEl);
+  el.appendChild(center);
+
+  container.appendChild(el);
+}
+
+// ---- STABILITY CHART (SVG) ----
+function renderStability(container) {
+  var w = container.clientWidth;
+  var h = 60;
+  var segments = [
+    { pct: 0.30, state: 'ok', label: 'Amnezia', proto: 'amnezia' },
+    { pct: 0.01, state: 'failover', label: '', proto: null },
+    { pct: 0.25, state: 'ok', label: 'Xray', proto: 'xray' },
+    { pct: 0.03, state: 'no_internet', label: '', proto: null },
+    { pct: 0.01, state: 'failover', label: '', proto: null },
+    { pct: 0.15, state: 'ok', label: 'OpenVPN', proto: 'openvpn' },
+    { pct: 0.01, state: 'failover', label: '', proto: null },
+    { pct: 0.24, state: 'ok', label: 'Amnezia', proto: 'amnezia' }
+  ];
+  var fills = {
+    ok: '#1a2e1a', failover: '#4a0f0d', no_internet: '#2e1a1a',
+    amnezia: 'rgba(90,154,90,0.15)', xray: 'rgba(122,138,170,0.15)', openvpn: 'rgba(170,138,90,0.15)'
+  };
+  var strokes = {
+    ok: '#2a4a2a', failover: '#6b1a17', no_internet: '#4a2a2a',
+    amnezia: '#5a9a5a', xray: '#7a8aaa', openvpn: '#aa8a5a'
+  };
+
+  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+
+  var x = 0;
+  for (var i = 0; i < segments.length; i++) {
+    var seg = segments[i];
+    var sw = seg.pct * w;
+    var fillColor = seg.proto ? fills[seg.proto] : fills[seg.state];
+    var strokeColor = seg.proto ? strokes[seg.proto] : strokes[seg.state];
+    var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', x); rect.setAttribute('y', 10);
+    rect.setAttribute('width', sw); rect.setAttribute('height', 30);
+    rect.setAttribute('rx', 3);
+    rect.setAttribute('fill', fillColor);
+    rect.setAttribute('stroke', strokeColor);
+    rect.setAttribute('stroke-width', 1);
+    svg.appendChild(rect);
+
+    if (seg.label && sw > 40) {
+      var txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', x + sw / 2); txt.setAttribute('y', 30);
+      txt.setAttribute('text-anchor', 'middle');
+      txt.setAttribute('font-family', 'Martian Mono');
+      txt.setAttribute('font-size', '8');
+      txt.setAttribute('font-weight', '300');
+      txt.setAttribute('fill', strokeColor);
+      txt.textContent = seg.label;
+      svg.appendChild(txt);
+    }
+    x += sw;
+  }
+
+  var t1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t1.setAttribute('x', 0); t1.setAttribute('y', 56);
+  t1.setAttribute('font-family', 'Martian Mono'); t1.setAttribute('font-size', '8');
+  t1.setAttribute('font-weight', '300'); t1.setAttribute('fill', '#555550');
+  t1.textContent = '00:00';
+  svg.appendChild(t1);
+
+  var t2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  t2.setAttribute('x', w); t2.setAttribute('y', 56);
+  t2.setAttribute('text-anchor', 'end');
+  t2.setAttribute('font-family', 'Martian Mono'); t2.setAttribute('font-size', '8');
+  t2.setAttribute('font-weight', '300'); t2.setAttribute('fill', '#555550');
+  t2.textContent = 'now';
+  svg.appendChild(t2);
+
+  container.appendChild(svg);
+}
+
+// ---- UPLOT SHARED OPTIONS ----
+var chartFont = '10px Martian Mono';
+var chartGrid = { stroke: '#2e2e2d', width: 1, dash: [2, 4] };
+var chartTicks = { stroke: '#2e2e2d', width: 1, size: 4 };
+
+// floating tooltip plugin
+function tooltipPlugin() {
+  var tooltip = document.createElement('div');
+  tooltip.className = 'chart-tooltip';
+  tooltip.style.display = 'none';
+
+  function show(u) {
+    var idx = u.cursor.idx;
+    if (idx == null) { tooltip.style.display = 'none'; return; }
+
+    var lines = [];
+    for (var i = 1; i < u.series.length; i++) {
+      var s = u.series[i];
+      if (!s.show) continue;
+      var v = u.data[i][idx];
+      var formatted = s.value ? s.value(u, v) : (v != null ? v.toFixed(1) : '--');
+      var color = typeof s._stroke === 'function' ? s._stroke(u, i) : s.stroke;
+      lines.push(
+        '<div class="chart-tooltip-row">' +
+        '<span class="chart-tooltip-dot" style="background:' + color + '"></span>' +
+        '<span class="chart-tooltip-label">' + s.label + '</span>' +
+        '<span class="chart-tooltip-val">' + formatted + '</span>' +
+        '</div>'
+      );
+    }
+
+    var ts = u.data[0][idx];
+    var d = new Date(ts * 1000);
+    var time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+
+    tooltip.firstChild.textContent = time;
+    tooltip.lastChild.innerHTML = lines.join('');
+    tooltip.style.display = 'block';
+
+    var left = u.cursor.left + u.over.offsetLeft;
+    var top = u.cursor.top + u.over.offsetTop;
+    var tw = tooltip.offsetWidth;
+    var th = tooltip.offsetHeight;
+    var pw = u.root.offsetWidth;
+
+    // flip side if near edge
+    var x = left + 16;
+    if (x + tw > pw) x = left - tw - 8;
+    var y = top - th - 8;
+    if (y < 0) y = top + 16;
+
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+
+  return {
+    hooks: {
+      init: function(u) {
+        var timeEl = document.createElement('div');
+        timeEl.className = 'chart-tooltip-time';
+        var bodyEl = document.createElement('div');
+        bodyEl.className = 'chart-tooltip-body';
+        tooltip.appendChild(timeEl);
+        tooltip.appendChild(bodyEl);
+        u.root.style.position = 'relative';
+        u.root.appendChild(tooltip);
+      },
+      setCursor: function(u) { show(u); },
+      setSelect: function(u) { tooltip.style.display = 'none'; }
+    }
+  };
+}
+
+function baseOpts(width) {
+  return {
+    width: width,
+    height: 220,
+    plugins: [tooltipPlugin()],
+    cursor: {
+      show: true,
+      drag: { setScale: false },
+      points: { size: 6, fill: '#5a9a5a', stroke: '#1c1c1b', width: 2 }
+    },
+    axes: [
+      { stroke: '#555550', grid: chartGrid, ticks: chartTicks, font: chartFont, gap: 8 },
+      { stroke: '#555550', grid: chartGrid, ticks: chartTicks, font: chartFont, gap: 8, size: 50 }
+    ],
+    legend: { show: true, live: true },
+    padding: [12, 8, 0, 0]
+  };
+}
+
+// ---- INIT ----
+document.addEventListener('DOMContentLoaded', function() {
+  // Sparklines
+  var latData = mockValues(20, 150, 80);
+  var spdData = mockValues(20, 40, 30);
+  renderSparkline(document.getElementById('spark-latency'), latData, '#5a9a5a');
+  renderSparkline(document.getElementById('spark-speed'), spdData, '#5a9a5a');
+
+  // Arc gauges
+  var gRow = document.getElementById('gauges-row');
+  renderArcGauge(gRow, 57.8, 100, 'Mbps');
+  renderArcGauge(gRow, 43.0, 100, 'Mbps');
+  renderArcGauge(gRow, 12.5, 100, 'Mbps');
+
+  // Stability
+  renderStability(document.getElementById('chart-stability'));
+
+  // ---- COLOR GENERATOR (deterministic from string) ----
+  function tunnelColor(name) {
+    var hash = 0;
+    for (var i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    var h = ((hash % 360) + 360) % 360;
+    return {
+      stroke: 'hsl(' + h + ', 35%, 55%)',
+      fill: 'hsla(' + h + ', 35%, 55%, 0.08)',
+      point: 'hsl(' + h + ', 35%, 55%)'
+    };
+  }
+
+  // mock tunnels for design system
+  var mockTunnels = [
+    { name: 'Amnezia WG v2', latBase: 160, latVar: 60, spdBase: 45, spdVar: 25 },
+    { name: 'Xray VLESS Reality', latBase: 310, latVar: 80, spdBase: 30, spdVar: 25 },
+    { name: 'Backup OpenVPN', latBase: 240, latVar: 100, spdBase: 20, spdVar: 20 }
+  ];
+
+  // ---- HELPER: build per-tunnel chart card ----
+  function buildChartCard(parent, t, suffix, seriesOpts, data) {
+    var c = tunnelColor(t.name);
+    var container = document.createElement('div');
+    container.className = 'chart-container';
+
+    var title = document.createElement('div');
+    title.className = 'chart-title';
+    title.style.display = 'flex';
+    title.style.alignItems = 'center';
+    title.style.gap = '8px';
+
+    var dot = document.createElement('span');
+    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + c.stroke + ';box-shadow:0 0 4px ' + c.stroke;
+    title.appendChild(dot);
+    title.appendChild(document.createTextNode(t.name + ' / ' + suffix));
+    container.appendChild(title);
+
+    var chartDiv = document.createElement('div');
+    container.appendChild(chartDiv);
+    parent.appendChild(container);
+
+    // defer uPlot init until element has layout width
+    requestAnimationFrame(function() {
+      var w = container.clientWidth - 42;
+      if (w < 100) w = 300;
+      var opts = baseOpts(w);
+      opts.height = 160;
+      opts.series = [{}, seriesOpts(c)];
+      new uPlot(opts, data, chartDiv);
+    });
+  }
+
+  // ---- PER-TUNNEL LATENCY CHARTS ----
+  var latRow = document.getElementById('charts-latency');
+  mockTunnels.forEach(function(t) {
+    var times = mockTime(60, 30);
+    var vals = mockValues(60, t.latBase, t.latVar);
+    buildChartCard(latRow, t, 'latency', function(c) {
+      return { label: t.name, stroke: c.stroke, width: 1.5, fill: c.fill, points: { show: false },
+        value: function(u,v){return v != null ? v.toFixed(0) + ' ms' : '--'} };
+    }, [times, vals]);
+  });
+
+  // ---- PER-TUNNEL SPEED CHARTS ----
+  var spdRow = document.getElementById('charts-speed');
+  mockTunnels.forEach(function(t) {
+    var times = mockTime(24, 900);
+    var vals = mockValues(24, t.spdBase, t.spdVar);
+    buildChartCard(spdRow, t, 'speed', function(c) {
+      return { label: t.name, stroke: c.stroke, width: 2, fill: c.fill,
+        points: { show: true, size: 4, fill: c.point, stroke: '#1c1c1b' },
+        value: function(u,v){return v != null ? v.toFixed(1) + ' Mbps' : '--'} };
+    }, [times, vals]);
+  });
+
+  // ---- TOTAL TRAFFIC CHART (in/out, not per-tunnel) ----
+  var trEl = document.getElementById('chart-traffic');
+  var trW = trEl.parentElement.clientWidth - 42;
+  var trT = mockTime(48, 300);
+  var fmtBytes = function(u,v){if(v==null)return'--';if(v>=1e9)return(v/1e9).toFixed(1)+' GB';if(v>=1e6)return(v/1e6).toFixed(1)+' MB';if(v>=1e3)return(v/1e3).toFixed(0)+' KB';return v+' B'};
+  var trOpts = baseOpts(trW);
+  trOpts.axes[1] = Object.assign({}, trOpts.axes[1], {
+    values: function(u, ticks) {
+      return ticks.map(function(v) {
+        if (v >= 1e9) return (v / 1e9).toFixed(1) + 'G';
+        if (v >= 1e6) return (v / 1e6).toFixed(0) + 'M';
+        if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+        return v;
+      });
+    }
+  });
+  trOpts.series = [
+    {},
+    { label: 'In', stroke: '#5a9a5a', width: 1.5, fill: 'rgba(90,154,90,0.08)', points: { show: false }, value: fmtBytes },
+    { label: 'Out', stroke: '#8a7a2a', width: 1, fill: 'rgba(138,122,42,0.06)', points: { show: false }, value: fmtBytes }
+  ];
+  new uPlot(trOpts, [trT, mockValues(48, 0, 50000000), mockValues(48, 0, 5000000)], trEl);
+
+  // Resize handler
+  window.addEventListener('resize', function() {
+    var el = document.getElementById('chart-stability');
+    while (el.firstChild) el.removeChild(el.firstChild);
+    renderStability(el);
+  });
+});
+</script>
+</body>
+</html>
