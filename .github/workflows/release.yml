@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+            xray_asset: Xray-linux-64.zip
+            tun2socks_asset: tun2socks-linux-amd64.zip
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+            xray_asset: Xray-linux-arm64-v8a.zip
+            tun2socks_asset: tun2socks-linux-arm64.zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Download VPN binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XRAY_ASSET: ${{ matrix.xray_asset }}
+          TUN2SOCKS_ASSET: ${{ matrix.tun2socks_asset }}
+        run: |
+          mkdir -p pkg/bindata/amd64
+
+          # amneziawg-go from Docker image
+          docker pull amneziavpn/amneziawg-go:latest
+          CID=$(docker create amneziavpn/amneziawg-go:latest)
+          docker cp "$CID:/usr/bin/amneziawg-go" /tmp/amneziawg-go
+          docker rm "$CID"
+
+          # xray from GitHub release
+          gh release download --repo XTLS/Xray-core --pattern "$XRAY_ASSET" --dir /tmp --clobber
+          unzip -o "/tmp/$XRAY_ASSET" xray -d /tmp/
+
+          # tun2socks from GitHub release
+          gh release download --repo xjasonlyu/tun2socks --pattern "$TUN2SOCKS_ASSET" --dir /tmp --clobber
+          mkdir -p /tmp/tun2socks-extract
+          unzip -o "/tmp/$TUN2SOCKS_ASSET" -d /tmp/tun2socks-extract/
+          cp /tmp/tun2socks-extract/tun2socks-* /tmp/tun2socks
+
+          # compress and place for embed
+          gzip -9 -f /tmp/amneziawg-go
+          gzip -9 -f /tmp/xray
+          gzip -9 -f /tmp/tun2socks
+          cp /tmp/amneziawg-go.gz pkg/bindata/amd64/
+          cp /tmp/xray.gz pkg/bindata/amd64/
+          cp /tmp/tun2socks.gz pkg/bindata/amd64/
+
+      - name: Build
+        env:
+          BUILD_GOOS: ${{ matrix.goos }}
+          BUILD_GOARCH: ${{ matrix.goarch }}
+          BUILD_SUFFIX: ${{ matrix.suffix }}
+        run: |
+          CGO_ENABLED=1 GOOS="$BUILD_GOOS" GOARCH="$BUILD_GOARCH" \
+            go build -ldflags '-s -w' -o "jamperhub-$BUILD_SUFFIX" ./cmd/jamperhub/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jamperhub-${{ matrix.suffix }}
+          path: jamperhub-${{ matrix.suffix }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          chmod +x artifacts/*/jamperhub-*
+          gh release create "$TAG_NAME" \
+            --repo "$REPO" \
+            --title "JamperHUB $TAG_NAME" \
+            --generate-notes \
+            artifacts/*/jamperhub-*
