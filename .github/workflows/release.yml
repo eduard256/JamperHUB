@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - goos: linux
@@ -19,11 +20,13 @@ jobs:
             suffix: linux-amd64
             xray_asset: Xray-linux-64.zip
             tun2socks_asset: tun2socks-linux-amd64.zip
+            cc: gcc
           - goos: linux
             goarch: arm64
             suffix: linux-arm64
             xray_asset: Xray-linux-arm64-v8a.zip
             tun2socks_asset: tun2socks-linux-arm64.zip
+            cc: aarch64-linux-gnu-gcc
 
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +34,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
+
+      - name: Install cross-compiler
+        if: matrix.goarch == 'arm64'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Download VPN binaries
         env:
@@ -66,12 +73,12 @@ jobs:
 
       - name: Build
         env:
-          BUILD_GOOS: ${{ matrix.goos }}
-          BUILD_GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '1'
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CC: ${{ matrix.cc }}
           BUILD_SUFFIX: ${{ matrix.suffix }}
-        run: |
-          CGO_ENABLED=1 GOOS="$BUILD_GOOS" GOARCH="$BUILD_GOARCH" \
-            go build -ldflags '-s -w' -o "jamperhub-$BUILD_SUFFIX" ./cmd/jamperhub/
+        run: go build -ldflags '-s -w' -o "jamperhub-$BUILD_SUFFIX" ./cmd/jamperhub/
 
       - uses: actions/upload-artifact@v4
         with:
