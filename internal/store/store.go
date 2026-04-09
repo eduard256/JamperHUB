@@ -269,15 +269,15 @@ func cleanup() {
 func periodToSQL(period string) (string, string) {
 	switch period {
 	case "1h":
-		return "-1 hour", "strftime('%Y-%m-%d %H:%M', time, 'start of minute')"
+		return "-1 hour", "strftime('%Y-%m-%dT%H:%M:00Z', time)"
 	case "24h":
-		return "-1 day", "strftime('%Y-%m-%d %H:%M', time, 'start of minute', printf('-%d minutes', CAST(strftime('%M', time) AS INTEGER) % 5))"
+		return "-1 day", "strftime('%Y-%m-%dT%H:', time) || printf('%02d', (CAST(strftime('%M', time) AS INTEGER) / 5) * 5) || ':00Z'"
 	case "7d":
-		return "-7 days", "strftime('%Y-%m-%d %H:00', time)"
+		return "-7 days", "strftime('%Y-%m-%dT%H:00:00Z', time)"
 	case "30d":
-		return "-30 days", "strftime('%Y-%m-%d %H:00', time, printf('-%d hours', CAST(strftime('%H', time) AS INTEGER) % 6))"
+		return "-30 days", "strftime('%Y-%m-%dT', time) || printf('%02d', (CAST(strftime('%H', time) AS INTEGER) / 6) * 6) || ':00:00Z'"
 	default:
-		return "-1 day", "strftime('%Y-%m-%d %H:%M', time)"
+		return "-1 day", "strftime('%Y-%m-%dT%H:%M:00Z', time)"
 	}
 }
 

@@ -3,6 +3,7 @@ package balancer
 import (
 	"fmt"
 	"log"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -450,7 +451,14 @@ func pingLoop() {
 				ts.latency = latency
 			}
 
-			store.AddTrafficPoint(id, ts.rxBytes, ts.txBytes, intPtr(ts.latency), stateStr(id))
+			// read interface traffic stats
+			tunIface := tunnel.RoutingInterface(ts.client)
+			rx := readIfaceStat(tunIface, "rx_bytes")
+			tx := readIfaceStat(tunIface, "tx_bytes")
+			ts.rxBytes = rx
+			ts.txBytes = tx
+
+			store.AddTrafficPoint(id, rx, tx, intPtr(ts.latency), stateStr(id))
 			mu.Unlock()
 		}
 
@@ -460,15 +468,11 @@ func pingLoop() {
 }
 
 func speedTestLoop() {
-	// initial delay
-	time.Sleep(30 * time.Second)
+	// wait for tunnels to connect before first speed test
+	time.Sleep(60 * time.Second)
 
 	for {
-		select {
-		case <-stopCh:
-			return
-		case <-time.After(getDuration("speed_test_interval", 900)):
-		}
+		// run speed test immediately on first iteration, then wait interval
 
 		mu.RLock()
 		if !hasNet {
@@ -518,6 +522,13 @@ func speedTestLoop() {
 
 		// check for speed-based migration
 		checkSpeedMigration()
+
+		// wait for next cycle
+		select {
+		case <-stopCh:
+			return
+		case <-time.After(getDuration("speed_test_interval", 900)):
+		}
 	}
 }
 
@@ -908,4 +919,14 @@ func intPtr(v int) *int {
 		return nil
 	}
 	return &v
+}
+
+func readIfaceStat(iface, stat string) int64 {
+	data, err := os.ReadFile("/sys/class/net/" + iface + "/statistics/" + stat)
+	if err != nil {
+		return 0
+	}
+	var val int64
+	fmt.Sscanf(strings.TrimSpace(string(data)), "%d", &val)
+	return val
 }
