@@ -93,6 +93,8 @@ const (
 	idleSamples       = 3
 )
 
+var started bool // true after goroutines are launched
+
 func Init() {
 	stopCh = make(chan struct{})
 
@@ -102,21 +104,11 @@ func Init() {
 		return
 	}
 
-	setup(cfg)
-
-	// if internet already available at startup, start tunnels immediately
-	if cfg.Network.Input != "" && netutil.HasInternet(cfg.Network.Input) {
-		hasNet = true
-		log.Printf("[balancer] internet available on %s, starting tunnels", cfg.Network.Input)
-		go startAllTunnels()
-	}
-
-	go networkWatcher()
-	go pingLoop()
-	go speedTestLoop()
+	boot(cfg)
 }
 
-// Reload re-reads config and re-initializes
+// Reload re-reads config and re-initializes.
+// Also starts goroutines if this is the first real config (after setup wizard).
 func Reload() {
 	mu.Lock()
 	// stop all tunnels
@@ -133,7 +125,27 @@ func Reload() {
 	if cfg.Network.Input == "" {
 		return
 	}
+
+	boot(cfg)
+}
+
+func boot(cfg config.Config) {
 	setup(cfg)
+
+	// if internet already available, start tunnels immediately
+	if cfg.Network.Input != "" && netutil.HasInternet(cfg.Network.Input) {
+		hasNet = true
+		log.Printf("[balancer] internet available on %s, starting tunnels", cfg.Network.Input)
+		go startAllTunnels()
+	}
+
+	// launch goroutines only once
+	if !started {
+		started = true
+		go networkWatcher()
+		go pingLoop()
+		go speedTestLoop()
+	}
 }
 
 // StartTunnel starts a specific tunnel by ID
@@ -512,6 +524,7 @@ func speedTestLoop() {
 				ts.lastSpeed = time.Now()
 				if err == nil {
 					ts.speedMbps = speed
+					store.AddSpeedPoint(id, speed)
 					log.Printf("[balancer] speed test %s: %.1f Mbps", id, speed)
 				} else {
 					log.Printf("[balancer] speed test %s: %v", id, err)

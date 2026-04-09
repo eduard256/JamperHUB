@@ -77,6 +77,15 @@ func migrate() error {
 			reason TEXT
 		);
 		CREATE INDEX IF NOT EXISTS idx_stability_time ON stability_intervals(time_from);
+
+		CREATE TABLE IF NOT EXISTS speed_points (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			time DATETIME DEFAULT (datetime('now')),
+			tunnel_id TEXT NOT NULL,
+			speed_mbps REAL NOT NULL
+		);
+		CREATE INDEX IF NOT EXISTS idx_speed_time ON speed_points(time);
+		CREATE INDEX IF NOT EXISTS idx_speed_tunnel ON speed_points(tunnel_id);
 	`)
 	return err
 }
@@ -108,6 +117,36 @@ func GetEvents(limit int, eventType string) []map[string]any {
 	args = append(args, limit)
 
 	return queryMaps(query, args...)
+}
+
+// AddSpeedPoint records a speed test result
+func AddSpeedPoint(tunnelID string, speedMbps float64) {
+	if db == nil {
+		return
+	}
+	_, err := db.Exec(
+		`INSERT INTO speed_points (tunnel_id, speed_mbps) VALUES (?, ?)`,
+		tunnelID, speedMbps,
+	)
+	if err != nil {
+		log.Printf("[store] add speed point: %v", err)
+	}
+}
+
+// GetTunnelSpeedHistory returns speed test history for a tunnel
+func GetTunnelSpeedHistory(tunnelID, period string) map[string]any {
+	interval, _ := periodToSQL(period)
+	return map[string]any{
+		"id":     tunnelID,
+		"period": period,
+		"points": queryMaps(
+			`SELECT strftime('%Y-%m-%dT%H:%M:00Z', time) as t, speed_mbps
+			FROM speed_points
+			WHERE tunnel_id = ? AND time > datetime('now', ?)
+			ORDER BY time`,
+			tunnelID, interval,
+		),
+	}
 }
 
 // AddTrafficPoint records a healthcheck data point
@@ -264,6 +303,7 @@ func cleanup() {
 	db.Exec(`DELETE FROM traffic_points WHERE time < datetime('now', '-30 days')`)
 	db.Exec(`DELETE FROM events WHERE time < datetime('now', '-30 days')`)
 	db.Exec(`DELETE FROM stability_intervals WHERE time_from < datetime('now', '-30 days')`)
+	db.Exec(`DELETE FROM speed_points WHERE time < datetime('now', '-30 days')`)
 }
 
 func periodToSQL(period string) (string, string) {

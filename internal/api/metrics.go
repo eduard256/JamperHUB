@@ -83,6 +83,8 @@ func handleMetricsTunnelDetail(w http.ResponseWriter, r *http.Request) {
 	switch metric {
 	case "latency":
 		api.Response(w, store.GetTunnelLatencyHistory(id, period), http.StatusOK)
+	case "speed":
+		api.Response(w, store.GetTunnelSpeedHistory(id, period), http.StatusOK)
 	default:
 		api.Error(w, "metrics: unknown metric: "+metric, http.StatusBadRequest)
 	}

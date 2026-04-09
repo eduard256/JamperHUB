@@ -701,60 +701,63 @@ function loadPerTunnelCharts() {
         });
       });
 
-      // speed chart (layout-stats-bottom)
-      api.get('/api/metrics/tunnels?period=24h').then(function(metrics) {
-        var m = metrics.find(function(x) { return x.tunnel_id === t.id; });
-        var c = tunnelColor(t.name);
-        var wrapper = el('div', 'layout-stats-bottom');
+      // speed chart (layout-stats-bottom) with real speed history
+      (function(tunnel) {
+        api.get('/api/metrics/tunnel/' + tunnel.id + '/speed?period=24h').then(function(data) {
+          var c = tunnelColor(tunnel.name);
+          var wrapper = el('div', 'layout-stats-bottom');
 
-        var container = el('div', 'chart-container');
-        var title = el('div', 'chart-title');
-        var dot = el('span', '');
-        dot.style.cssText = 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + c.stroke + ';box-shadow:0 0 4px ' + c.stroke;
-        title.appendChild(dot);
-        title.appendChild(document.createTextNode(t.name + ' / speed'));
-        container.appendChild(title);
-        var chartDiv = el('div', '');
-        container.appendChild(chartDiv);
-        wrapper.appendChild(container);
+          var container = el('div', 'chart-container');
+          var title = el('div', 'chart-title');
+          var dot = el('span', '');
+          dot.style.cssText = 'width:6px;height:6px;border-radius:50%;flex-shrink:0;background:' + c.stroke + ';box-shadow:0 0 4px ' + c.stroke;
+          title.appendChild(dot);
+          title.appendChild(document.createTextNode(tunnel.name + ' / speed'));
+          container.appendChild(title);
+          var chartDiv = el('div', '');
+          container.appendChild(chartDiv);
+          wrapper.appendChild(container);
 
-        // stats row
-        var statsRow = el('div', 'stats-row');
-        var cells = [
-          ['Current', formatSpeed(t.speed_mbps)],
-          ['Min', m ? formatSpeed(m.min_latency) : '--'],
-          ['Max', m ? formatSpeed(m.max_latency) : '--'],
-          ['Avg', m ? formatSpeed(m.avg_latency) : '--']
-        ];
-        cells.forEach(function(c) {
-          var cell = el('div', 'stat-cell');
-          cell.appendChild(el('div', 'stat-cell-label', c[0]));
-          cell.appendChild(el('div', 'stat-cell-val', c[1]));
-          statsRow.appendChild(cell);
-        });
-        wrapper.appendChild(statsRow);
-        spdRow.appendChild(wrapper);
-
-        // render chart with mock speed points (API returns aggregate, not time series for speed)
-        requestAnimationFrame(function() {
-          var w = container.clientWidth - 42;
-          if (w < 100) w = 300;
-          var times = [], vals = [];
-          var now = Math.floor(Date.now() / 1000);
-          for (var i = 0; i < 20; i++) {
-            times.push(now - (20 - i) * 900);
-            vals.push(t.speed_mbps ? t.speed_mbps * (0.8 + Math.random() * 0.4) : null);
-          }
-          var opts = chartOpts(w, 150);
-          opts.series = [
-            {},
-            { label: t.name, stroke: c.stroke, width: 2, fill: c.fill,
-              points: { show: true, size: 4, fill: c.point, stroke: '#1a1a1e' },
-              value: function(u,v){return v != null ? v.toFixed(1) + ' Mbps' : '--';} }
+          // stats row
+          var statsRow = el('div', 'stats-row');
+          var cells = [
+            ['Speed', formatSpeed(tunnel.speed_mbps)],
+            ['Latency', formatLatency(tunnel.latency)],
+            ['Traffic In', formatBytes(tunnel.traffic_in)],
+            ['Traffic Out', formatBytes(tunnel.traffic_out)]
           ];
-          new uPlot(opts, [times, vals], chartDiv);
+          cells.forEach(function(cd) {
+            var cell = el('div', 'stat-cell');
+            cell.appendChild(el('div', 'stat-cell-label', cd[0]));
+            cell.appendChild(el('div', 'stat-cell-val', cd[1]));
+            statsRow.appendChild(cell);
+          });
+          wrapper.appendChild(statsRow);
+          spdRow.appendChild(wrapper);
+
+          // render chart
+          var pts = data.points || [];
+          if (pts.length === 0) return;
+
+          requestAnimationFrame(function() {
+            var w = container.clientWidth - 42;
+            if (w < 100) w = 300;
+            var times = [], vals = [];
+            for (var i = 0; i < pts.length; i++) {
+              times.push(new Date(pts[i].t).getTime() / 1000);
+              vals.push(pts[i].speed_mbps);
+            }
+            var opts = chartOpts(w, 150);
+            opts.series = [
+              {},
+              { label: tunnel.name, stroke: c.stroke, width: 2, fill: c.fill,
+                points: { show: true, size: 4, fill: c.point, stroke: '#1a1a1e' },
+                value: function(u,v){return v != null ? v.toFixed(1) + ' Mbps' : '--';} }
+            ];
+            new uPlot(opts, [times, vals], chartDiv);
+          });
         });
-      });
+      })(t);
     });
   });
 }
