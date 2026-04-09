@@ -481,7 +481,7 @@ func pingLoop() {
 
 func speedTestLoop() {
 	// wait for tunnels to connect before first speed test
-	time.Sleep(60 * time.Second)
+	time.Sleep(20 * time.Second)
 
 	for {
 		// run speed test immediately on first iteration, then wait interval

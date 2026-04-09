@@ -75,10 +75,10 @@ func Default() Config {
 		},
 		Balancer: Balancer{
 			HealthcheckInterval: 10,
-			SpeedTestInterval:   900,
+			SpeedTestInterval:   7200,
 			TestURL:             "http://cp.cloudflare.com/generate_204",
-			SpeedTestURL:        "https://speed.cloudflare.com/__down?bytes=10000000",
-			SpeedTestSize:       10_000_000,
+			SpeedTestURL:        "https://speed.cloudflare.com/__down?bytes=3000000",
+			SpeedTestSize:       3_000_000,
 			FallbackDirect:      true,
 			SwitchThresholdPct:  35,
 			SwitchCooldown:      1800,
