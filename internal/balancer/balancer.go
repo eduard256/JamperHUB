@@ -227,6 +227,9 @@ func GetState() SystemState {
 	}
 
 	for _, ts := range tunnels {
+		if ts.priority == 3 && (ts.client == nil || !ts.client.Running()) {
+			continue // standby -- don't count as up or down
+		}
 		if ts.client != nil && ts.client.Running() && ts.latency >= 0 {
 			s.TunnelsUp++
 		} else {
