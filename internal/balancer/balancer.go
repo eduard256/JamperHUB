@@ -22,6 +22,7 @@ type tunnelState struct {
 	id        string
 	client    tunnel.Client
 	cfg       config.Server
+	priority  int // 1, 2, 3
 	latency   int // ms, -1 = dead
 	speedMbps float64
 	failures  int
@@ -257,14 +258,19 @@ func GetTunnelStatuses() []tunnel.Status {
 	result := make([]tunnel.Status, 0, len(tunnels))
 	for _, ts := range tunnels {
 		st := tunnel.Status{
-			ID:      ts.id,
-			Name:    ts.cfg.Name,
-			Type:    ts.cfg.Type,
-			Enabled: ts.cfg.Enabled,
+			ID:       ts.id,
+			Name:     ts.cfg.Name,
+			Type:     ts.cfg.Type,
+			Enabled:  ts.cfg.Enabled,
+			Priority: ts.priority,
 		}
 
 		if ts.client == nil {
-			st.State = tunnel.StateDisabled
+			if ts.priority == 3 {
+				st.State = tunnel.StateStandby
+			} else {
+				st.State = tunnel.StateDisabled
+			}
 		} else if !ts.client.Running() {
 			st.State = tunnel.StateConnecting
 		} else if ts.latency < 0 {
@@ -567,12 +573,15 @@ func checkSpeedMigration() {
 		return
 	}
 
-	// find fastest tunnel
+	// find fastest tunnel within the same priority level
 	var bestID string
 	var bestSpeed float64
 	for id, ts := range tunnels {
 		if id == activeID || ts.latency < 0 || ts.speedMbps <= 0 {
 			continue
+		}
+		if ts.priority != activeTunnel.priority {
+			continue // speed migration only within same priority
 		}
 		if ts.speedMbps > bestSpeed {
 			bestSpeed = ts.speedMbps
@@ -731,9 +740,16 @@ func doMigration(targetID string) {
 
 func startAllTunnels() {
 	cfg := config.Get()
+	// start priority 1 and 2 only; priority 3 stays in standby
 	for _, srv := range cfg.Servers {
-		if srv.Enabled {
+		if srv.Enabled && srv.Priority != 3 {
 			startOne(srv)
+		}
+	}
+	// register priority 3 as standby (not started)
+	for _, srv := range cfg.Servers {
+		if srv.Enabled && srv.Priority == 3 {
+			registerStandby(srv)
 		}
 	}
 
@@ -779,11 +795,17 @@ func startOne(srv config.Server) {
 		return
 	}
 
+	priority := srv.Priority
+	if priority < 1 || priority > 3 {
+		priority = 2
+	}
+
 	mu.Lock()
 	tunnels[srv.ID] = &tunnelState{
 		id:        srv.ID,
 		client:    client,
 		cfg:       srv,
+		priority:  priority,
 		latency:   -1,
 		startedAt: time.Now(),
 	}
@@ -792,62 +814,221 @@ func startOne(srv config.Server) {
 	store.AddEvent("info", "tunnel_up", srv.ID, "started "+srv.Name, 0)
 }
 
+// registerStandby adds a priority 3 tunnel to the map without starting it
+func registerStandby(srv config.Server) {
+	mu.Lock()
+	if _, exists := tunnels[srv.ID]; exists {
+		mu.Unlock()
+		return
+	}
+	tunnels[srv.ID] = &tunnelState{
+		id:       srv.ID,
+		client:   nil, // not started
+		cfg:      srv,
+		priority: 3,
+		latency:  -1,
+	}
+	mu.Unlock()
+}
+
+// startPriority3 launches priority 3 tunnels two at a time until one connects
+func startPriority3() {
+	mu.RLock()
+	var standby []string
+	for id, ts := range tunnels {
+		if ts.priority == 3 && ts.client == nil {
+			standby = append(standby, id)
+		}
+	}
+	mu.RUnlock()
+
+	if len(standby) == 0 {
+		return
+	}
+
+	log.Printf("[balancer] starting priority 3 tunnels (%d available)", len(standby))
+	store.AddEvent("warn", "priority3_start", "", fmt.Sprintf("starting backup tunnels, %d available", len(standby)), 0)
+
+	// launch two at a time
+	for i := 0; i < len(standby); i += 2 {
+		batch := standby[i:]
+		if len(batch) > 2 {
+			batch = batch[:2]
+		}
+
+		for _, id := range batch {
+			mu.RLock()
+			ts, ok := tunnels[id]
+			mu.RUnlock()
+			if !ok {
+				continue
+			}
+			go startOne(ts.cfg)
+		}
+
+		// wait for one to connect
+		time.Sleep(10 * time.Second)
+
+		// check if any connected
+		mu.RLock()
+		for _, id := range batch {
+			if ts, ok := tunnels[id]; ok && ts.client != nil && ts.client.Running() && ts.latency >= 0 {
+				mu.RUnlock()
+				log.Printf("[balancer] priority 3 tunnel %s connected", id)
+				return
+			}
+		}
+		mu.RUnlock()
+	}
+}
+
+// stopPriority3 stops all running priority 3 tunnels
+func stopPriority3() {
+	mu.Lock()
+	for id, ts := range tunnels {
+		if ts.priority == 3 && ts.client != nil && ts.client.Running() {
+			ts.client.Stop()
+			ts.client = nil
+			ts.latency = -1
+			ts.startedAt = time.Time{}
+			log.Printf("[balancer] stopped priority 3 tunnel %s", id)
+			store.AddEvent("info", "tunnel_down", id, "backup tunnel stopped, higher priority available", 0)
+		}
+	}
+	mu.Unlock()
+}
+
+// Rebalance re-evaluates active tunnel based on current priorities (called on priority change)
+func Rebalance() {
+	// sync priorities from config to runtime state
+	mu.Lock()
+	cfg := config.Get()
+	for _, srv := range cfg.Servers {
+		if ts, ok := tunnels[srv.ID]; ok {
+			p := srv.Priority
+			if p < 1 || p > 3 {
+				p = 2
+			}
+			ts.priority = p
+			ts.cfg = srv
+		}
+	}
+	mu.Unlock()
+
+	selectBest()
+}
+
 func selectBest() {
 	mu.Lock()
 	defer mu.Unlock()
 
 	type candidate struct {
-		id      string
-		latency int
+		id       string
+		priority int
+		latency  int
 	}
 
-	var candidates []candidate
+	var alive []candidate
 	for id, ts := range tunnels {
 		if ts.client != nil && ts.client.Running() && ts.latency >= 0 {
-			candidates = append(candidates, candidate{id, ts.latency})
+			alive = append(alive, candidate{id, ts.priority, ts.latency})
 		}
 	}
 
-	if len(candidates) == 0 {
-		if activeID != "" {
-			activeID = ""
-			log.Printf("[balancer] all tunnels down, fallback direct")
-			store.AddEvent("critical", "all_down", "", "all tunnels down, fallback to direct", 0)
-			cfg := config.Get()
-			gw := netutil.GetDefaultGW()
-			go netutil.SetDirectRoute(cfg.Network.Input, gw)
+	// no alive tunnels at priority 1 or 2 -> start priority 3
+	hasP1P2 := false
+	for _, c := range alive {
+		if c.priority <= 2 {
+			hasP1P2 = true
+			break
 		}
-		return
 	}
 
-	sort.Slice(candidates, func(i, j int) bool {
-		return candidates[i].latency < candidates[j].latency
-	})
-
-	best := candidates[0]
-
-	if activeID == "" || activeID != best.id {
-		// check if current active is still alive -- only switch if it's dead or this is first select
+	if len(alive) == 0 {
 		if activeID != "" {
-			if ts, ok := tunnels[activeID]; ok && ts.latency >= 0 {
-				return // current is alive, don't switch just for latency in ping loop
-				// speed-based switching is handled by speedTestLoop
+			// check if there are priority 3 tunnels to try
+			hasP3 := false
+			for _, ts := range tunnels {
+				if ts.priority == 3 && ts.client == nil {
+					hasP3 = true
+					break
+				}
+			}
+			if hasP3 {
+				mu.Unlock()
+				startPriority3()
+				mu.Lock()
+				// re-check after starting p3
+				for id, ts := range tunnels {
+					if ts.client != nil && ts.client.Running() && ts.latency >= 0 {
+						alive = append(alive, candidate{id, ts.priority, ts.latency})
+					}
+				}
 			}
 		}
 
-		prev := activeID
-		activeID = best.id
-		ts := tunnels[best.id]
-
-		go netutil.SetActiveRoute(tunnel.RoutingInterface(ts.client))
-
-		if prev != "" {
-			log.Printf("[balancer] failover %s -> %s (latency %dms)", prev, best.id, best.latency)
-			store.AddEvent("info", "failover", best.id,
-				fmt.Sprintf("failover %s -> %s", prev, best.id), int(time.Since(ts.lastCheck).Milliseconds()))
-		} else {
-			log.Printf("[balancer] active: %s (latency %dms)", best.id, best.latency)
+		if len(alive) == 0 {
+			if activeID != "" {
+				activeID = ""
+				log.Printf("[balancer] all tunnels down, fallback direct")
+				store.AddEvent("critical", "all_down", "", "all tunnels down, fallback to direct", 0)
+				cfg := config.Get()
+				gw := netutil.GetDefaultGW()
+				go netutil.SetDirectRoute(cfg.Network.Input, gw)
+			}
+			return
 		}
+	}
+
+	// if we have priority 1/2 alive and priority 3 running -> stop priority 3
+	if hasP1P2 {
+		for _, ts := range tunnels {
+			if ts.priority == 3 && ts.client != nil && ts.client.Running() {
+				go stopPriority3()
+				break
+			}
+		}
+	}
+
+	// find best candidate: prefer highest priority (lowest number), then lowest latency
+	sort.Slice(alive, func(i, j int) bool {
+		if alive[i].priority != alive[j].priority {
+			return alive[i].priority < alive[j].priority
+		}
+		return alive[i].latency < alive[j].latency
+	})
+
+	best := alive[0]
+
+	if activeID == best.id {
+		return // already active
+	}
+
+	// if we have an active tunnel, check if switch is needed
+	if activeID != "" {
+		activeTunnel, ok := tunnels[activeID]
+		if ok && activeTunnel.latency >= 0 {
+			// current is alive -- only switch if best has higher priority (lower number)
+			if best.priority >= activeTunnel.priority {
+				return // same or lower priority, don't switch (speed-based handled by speedTestLoop)
+			}
+			// best has higher priority -- switch (wait for idle handled by caller for speed-based)
+		}
+	}
+
+	prev := activeID
+	activeID = best.id
+	ts := tunnels[best.id]
+
+	go netutil.SetActiveRoute(tunnel.RoutingInterface(ts.client))
+
+	if prev != "" {
+		log.Printf("[balancer] failover %s -> %s (priority %d, latency %dms)", prev, best.id, best.priority, best.latency)
+		store.AddEvent("info", "failover", best.id,
+			fmt.Sprintf("failover %s -> %s (priority %d)", prev, best.id, best.priority),
+			int(time.Since(ts.lastCheck).Milliseconds()))
+	} else {
+		log.Printf("[balancer] active: %s (priority %d, latency %dms)", best.id, best.priority, best.latency)
 	}
 }
 

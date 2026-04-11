@@ -38,6 +38,7 @@ func handleTunnels(w http.ResponseWriter, r *http.Request) {
 			Name       string `json:"name"`
 			Type       string `json:"type"`
 			Enabled    bool   `json:"enabled"`
+			Priority   int    `json:"priority"`
 			ConfigData string `json:"config_data"`
 		}
 		if err := api.Decode(r, &req); err != nil {
@@ -57,11 +58,17 @@ func handleTunnels(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		priority := req.Priority
+		if priority < 1 || priority > 3 {
+			priority = 2 // default
+		}
+
 		s := config.Server{
 			ID:         genID(),
 			Name:       req.Name,
 			Type:       req.Type,
 			Enabled:    req.Enabled,
+			Priority:   priority,
 			ConfigData: req.ConfigData,
 		}
 		if err := config.AddServer(s); err != nil {
@@ -114,6 +121,7 @@ func handleTunnel(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			Name       *string `json:"name"`
 			Enabled    *bool   `json:"enabled"`
+			Priority   *int    `json:"priority"`
 			ConfigData *string `json:"config_data"`
 		}
 		if err := api.Decode(r, &req); err != nil {
@@ -127,6 +135,9 @@ func handleTunnel(w http.ResponseWriter, r *http.Request) {
 			}
 			if req.Enabled != nil {
 				s.Enabled = *req.Enabled
+			}
+			if req.Priority != nil && *req.Priority >= 1 && *req.Priority <= 3 {
+				s.Priority = *req.Priority
 			}
 			if req.ConfigData != nil {
 				s.ConfigData = *req.ConfigData
@@ -142,6 +153,11 @@ func handleTunnel(w http.ResponseWriter, r *http.Request) {
 		// restart tunnel if config or enabled state changed
 		if req.ConfigData != nil || req.Enabled != nil {
 			balancer.RestartTunnel(id)
+		}
+
+		// priority change: rebalance without restart
+		if req.Priority != nil {
+			balancer.Rebalance()
 		}
 
 		s, _ := config.GetServer(id)

@@ -50,6 +50,7 @@ type Server struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
 	Enabled    bool   `json:"enabled"`
+	Priority   int    `json:"priority"` // 1=primary, 2=recommended (default), 3=backup
 	ConfigData string `json:"config_data"`
 }
 

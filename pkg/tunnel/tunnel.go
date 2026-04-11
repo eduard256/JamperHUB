@@ -15,6 +15,7 @@ type State string
 
 const (
 	StateDisabled    State = "disabled"
+	StateStandby     State = "standby" // priority 3, not connected, waiting for emergency
 	StateConnecting  State = "connecting"
 	StateConnected   State = "connected"
 	StateActive      State = "active"
@@ -58,6 +59,7 @@ type Status struct {
 	Type              string  `json:"type"`
 	Mode              string  `json:"mode"` // "tun" or "proxy"
 	Enabled           bool    `json:"enabled"`
+	Priority          int     `json:"priority"` // 1, 2, 3
 	State             State   `json:"state"`
 	Latency           *int    `json:"latency"`            // ms, nil = unknown
 	SpeedMbps         *float64 `json:"speed_mbps"`        // nil = not tested yet
