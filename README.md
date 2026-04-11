@@ -19,6 +19,18 @@ Fault-tolerant VPN gateway with automatic channel balancer. One binary, multiple
 
 Supported protocols: **AmneziaWG** (v1/v2), **Xray** (VLESS/VMess/Reality). More coming.
 
+## Priority System
+
+Each tunnel has a priority level that controls when it's used and whether it stays connected.
+
+**Priority 1 -- Primary.** Your own VPN server. Always connected, always active -- even if it's slower than the rest. The system only switches away from it when it goes down. As soon as it recovers, traffic moves back. If you have multiple priority 1 servers, the fastest one is used. Speed-based migration works within the same priority level.
+
+**Priority 2 -- Recommended.** The default for most servers. Always connected, full monitoring, speed tests. Used when all priority 1 servers are down. Between each other, selected by speed. This is what you should use for most VPN configs.
+
+**Priority 3 -- Backup.** Not connected at startup. Sits in standby, doesn't consume connections or resources. Only activates when every priority 1 and 2 server is down. Launched in pairs -- first one that connects gets the traffic. No speed optimization, just "get internet working". When a higher-priority server recovers, backup tunnels shut down automatically.
+
+Priority can be changed at any time through the web UI or API -- no restart needed. The tunnel starts or stops immediately.
+
 ## Install
 
 Download the binary:
