@@ -357,8 +357,104 @@ body::after {
 
 .state-active { color: var(--status-active-text); }
 .state-ready { color: var(--status-ready-text); }
+.state-standby { color: var(--text-dim); }
+.state-connecting { color: var(--status-warn-text); }
 .state-down { color: var(--status-down-text); }
 .state-disabled { color: var(--status-disabled-text); }
+
+/* standby tunnel card */
+.tunnel-card.standby::before { background: var(--text-dim); border-left-style: dashed; }
+.tunnel-card.standby { opacity: 0.6; }
+
+/* priority label under tunnel name */
+.tunnel-priority {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.tunnel-priority.p1 { color: var(--status-active-text); }
+.tunnel-priority.p2 { color: #6a7a9a; }
+.tunnel-priority.p3 { color: var(--text-dim); }
+
+/* standby message in tunnel card */
+.tunnel-standby-msg {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 300;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* info icon + tooltip */
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--transition);
+  position: relative;
+}
+
+.info-icon:hover { border-color: var(--text-muted); color: var(--text-muted); }
+
+.info-popup {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  min-width: 240px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 200;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.info-popup.show { display: block; }
+
+.info-popup-title {
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.info-popup-desc {
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.info-popup-desc:last-child { margin-bottom: 0; }
+
+@media (max-width: 768px) {
+  .info-popup {
+    position: fixed;
+    bottom: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 280px;
+  }
+}
 
 .tunnel-add {
   border: 1px dashed var(--border);

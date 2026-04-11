@@ -142,6 +142,22 @@
       </div>
     </div>
 
+    <div class="collapsible-header" id="adv-toggle-2" style="margin-top:16px;">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      Advanced
+    </div>
+    <div class="collapsible-body" id="adv-body-2">
+      <div class="form-group" style="margin-top:12px;">
+        <label class="form-label">Priority</label>
+        <select class="select" id="setup-tun-priority">
+          <option value="1">Primary</option>
+          <option value="2" selected>Recommended</option>
+          <option value="3">Backup</option>
+        </select>
+        <div style="margin-top:6px;font-size:0.65rem;color:var(--text-dim);">Recommended is the default. Change only if you know what you need.</div>
+      </div>
+    </div>
+
     <div class="setup-actions">
       <button class="btn" id="btn-step2-back">Back</button>
       <button class="btn btn-success" id="btn-finish">Finish</button>
@@ -187,10 +203,14 @@ api.get('/api/tunnels/types').then(function(types) {
   if (types.length) qs('#setup-tun-config').placeholder = types[0].config_placeholder;
 });
 
-// advanced toggle
+// advanced toggles
 qs('#adv-toggle').addEventListener('click', function() {
   this.classList.toggle('open');
   qs('#adv-body').classList.toggle('open');
+});
+qs('#adv-toggle-2').addEventListener('click', function() {
+  this.classList.toggle('open');
+  qs('#adv-body-2').classList.toggle('open');
 });
 
 // file upload
@@ -254,6 +274,7 @@ qs('#btn-finish').addEventListener('click', function() {
     name: name,
     type: type,
     enabled: true,
+    priority: parseInt(qs('#setup-tun-priority').value),
     config_data: config
   }).then(function(r) {
     if (r.ok === false) { alert(r.error); return; }

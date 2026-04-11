@@ -366,16 +366,34 @@ function updateTunnels() {
   });
 }
 
+var priorityLabels = { 1: 'Primary', 2: 'Recommended', 3: 'Backup' };
+var priorityClasses = { 1: 'p1', 2: 'p2', 3: 'p3' };
+
+function sortTunnels(tunnels) {
+  var stateOrder = { active: 0, ready: 1, connecting: 2, standby: 3, down: 4, disabled: 5 };
+  return tunnels.slice().sort(function(a, b) {
+    var pa = a.priority || 2, pb = b.priority || 2;
+    if (pa !== pb) return pa - pb;
+    var sa = stateOrder[a.state] || 9, sb = stateOrder[b.state] || 9;
+    return sa - sb;
+  });
+}
+
 function renderTunnelCards(tunnels) {
   var grid = qs('#tunnel-grid');
   grid.textContent = '';
+  var sorted = sortTunnels(tunnels);
 
-  tunnels.forEach(function(t) {
+  sorted.forEach(function(t) {
     var card = el('div', 'tunnel-card ' + t.state);
     card.addEventListener('click', function() { openTunnelModal(t); });
 
     var info = el('div', 'tunnel-info');
     info.appendChild(el('div', 'tunnel-name', t.name));
+
+    // priority label
+    var pri = t.priority || 2;
+    info.appendChild(el('div', 'tunnel-priority ' + priorityClasses[pri], priorityLabels[pri]));
 
     var meta = el('div', 'tunnel-meta');
     var dot = el('span', 'proto-dot');
@@ -390,11 +408,15 @@ function renderTunnelCards(tunnels) {
     card.appendChild(info);
 
     var stats = el('div', 'tunnel-stats');
-    var lat = el('div', 'tunnel-latency');
-    lat.textContent = formatLatency(t.latency);
-    if (t.state === 'down') lat.style.color = 'var(--status-down-text)';
-    stats.appendChild(lat);
-    stats.appendChild(el('div', 'tunnel-speed', formatSpeed(t.speed_mbps)));
+    if (t.state === 'standby') {
+      stats.appendChild(el('div', 'tunnel-standby-msg', 'Waiting for emergency'));
+    } else {
+      var lat = el('div', 'tunnel-latency');
+      lat.textContent = formatLatency(t.latency);
+      if (t.state === 'down') lat.style.color = 'var(--status-down-text)';
+      stats.appendChild(lat);
+      stats.appendChild(el('div', 'tunnel-speed', formatSpeed(t.speed_mbps)));
+    }
     card.appendChild(stats);
 
     grid.appendChild(card);
@@ -402,14 +424,14 @@ function renderTunnelCards(tunnels) {
 
   // add button
   var addBtn = el('div', 'tunnel-add');
-  var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
+  var addSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  addSvg.setAttribute('viewBox', '0 0 24 24');
   var l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   l1.setAttribute('x1', '12'); l1.setAttribute('y1', '5'); l1.setAttribute('x2', '12'); l1.setAttribute('y2', '19');
   var l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   l2.setAttribute('x1', '5'); l2.setAttribute('y1', '12'); l2.setAttribute('x2', '19'); l2.setAttribute('y2', '12');
-  svg.appendChild(l1); svg.appendChild(l2);
-  addBtn.appendChild(svg);
+  addSvg.appendChild(l1); addSvg.appendChild(l2);
+  addBtn.appendChild(addSvg);
   addBtn.appendChild(document.createTextNode('Add Tunnel'));
   addBtn.addEventListener('click', openAddTunnelModal);
   grid.appendChild(addBtn);
@@ -418,8 +440,8 @@ function renderTunnelCards(tunnels) {
 function renderGauges(tunnels) {
   var row = qs('#gauges-row');
   row.textContent = '';
-  tunnels.forEach(function(t) {
-    if (t.speed_mbps != null) {
+  sortTunnels(tunnels).forEach(function(t) {
+    if (t.state !== 'standby' && t.state !== 'disabled' && t.speed_mbps != null) {
       renderArcGauge(row, t.speed_mbps.toFixed(1), 100, 'Mbps', t.name);
     }
   });
@@ -428,28 +450,49 @@ function renderGauges(tunnels) {
 // ---- TUNNEL MODALS ----
 function openTunnelModal(t) {
   openModal(t.name, function(modal, close) {
+    var pri = t.priority || 2;
     var info = el('div', '');
-    info.style.cssText = 'font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);margin-bottom:16px;';
-    info.textContent = t.id + ' / ' + t.type + ' / ' + t.mode + ' / ' + t.state;
+    info.style.cssText = 'font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);margin-bottom:8px;';
+    info.textContent = t.id + ' / ' + t.type + ' / ' + t.mode;
     modal.appendChild(info);
 
-    if (t.latency != null) {
-      var lat = el('div', '', 'Latency: ' + formatLatency(t.latency) + ' / Speed: ' + formatSpeed(t.speed_mbps));
-      lat.style.cssText = 'font-family:var(--font-mono);font-size:0.75rem;color:var(--text);margin-bottom:16px;';
-      modal.appendChild(lat);
+    var stLine = el('div', '');
+    stLine.style.cssText = 'font-family:var(--font-ui);font-size:0.8rem;color:var(--text);margin-bottom:16px;display:flex;gap:12px;align-items:center;';
+    var stBadge = el('span', 'state-' + t.state, t.state);
+    stBadge.style.fontWeight = '600';
+    stLine.appendChild(stBadge);
+    stLine.appendChild(el('span', 'tunnel-priority ' + priorityClasses[pri], priorityLabels[pri]));
+    modal.appendChild(stLine);
+
+    if (t.state !== 'standby' && t.latency != null) {
+      var metrics = el('div', '');
+      metrics.style.cssText = 'font-family:var(--font-mono);font-size:0.75rem;color:var(--text);margin-bottom:16px;';
+      metrics.textContent = formatLatency(t.latency) + '  /  ' + formatSpeed(t.speed_mbps) + '  /  ' + formatBytes(t.traffic_in) + ' in';
+      modal.appendChild(metrics);
     }
 
     var actions = el('div', 'modal-actions');
 
-    var restartBtn = el('button', 'btn btn-sm', 'Restart');
-    restartBtn.addEventListener('click', function() {
-      api.post('/api/tunnels/' + t.id + '/restart').then(function() { close(); });
-    });
+    if (t.state !== 'standby' && t.state !== 'disabled') {
+      var restartBtn = el('button', 'btn btn-sm', 'Restart');
+      restartBtn.addEventListener('click', function() {
+        api.post('/api/tunnels/' + t.id + '/restart').then(function() { close(); });
+      });
+      actions.appendChild(restartBtn);
 
-    var activateBtn = el('button', 'btn btn-sm btn-success', 'Activate');
-    activateBtn.addEventListener('click', function() {
-      api.post('/api/tunnels/' + t.id + '/activate').then(function() { close(); });
+      var activateBtn = el('button', 'btn btn-sm btn-success', 'Activate');
+      activateBtn.addEventListener('click', function() {
+        api.post('/api/tunnels/' + t.id + '/activate').then(function() { close(); });
+      });
+      actions.appendChild(activateBtn);
+    }
+
+    var editBtn = el('button', 'btn btn-sm', 'Edit');
+    editBtn.addEventListener('click', function() {
+      close();
+      openEditTunnelModal(t);
     });
+    actions.appendChild(editBtn);
 
     var deleteBtn = el('button', 'btn btn-sm btn-danger', 'Delete');
     deleteBtn.addEventListener('click', function() {
@@ -457,15 +500,118 @@ function openTunnelModal(t) {
         api.del('/api/tunnels/' + t.id).then(function() { close(); updateTunnels(); });
       }
     });
+    actions.appendChild(deleteBtn);
 
     var cancelBtn = el('button', 'btn btn-sm', 'Close');
     cancelBtn.addEventListener('click', close);
-
-    actions.appendChild(restartBtn);
-    actions.appendChild(activateBtn);
-    actions.appendChild(deleteBtn);
     actions.appendChild(cancelBtn);
+
     modal.appendChild(actions);
+  });
+}
+
+function openEditTunnelModal(t) {
+  api.get('/api/tunnels/' + t.id).then(function(full) {
+    openModal('Edit Tunnel', function(modal, close) {
+      // name
+      var fg1 = el('div', 'form-group');
+      fg1.appendChild(el('label', 'form-label', 'Name'));
+      var nameInput = el('input', 'input');
+      nameInput.value = full.name;
+      fg1.appendChild(nameInput);
+      modal.appendChild(fg1);
+
+      // priority
+      var fg2 = el('div', 'form-group');
+      var priLabel = el('div', '');
+      priLabel.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
+      priLabel.appendChild(el('label', 'form-label', 'Priority'));
+      priLabel.firstChild.style.marginBottom = '0';
+      var infoBtn = el('span', 'info-icon', 'i');
+      var popup = el('div', 'info-popup');
+      var descs = [
+        ['Primary', 'Your own server. Always connected, always preferred even if slower.'],
+        ['Recommended', 'Default choice. Connected and ready. Used when Primary is down.'],
+        ['Backup', 'Not connected until needed. Activates only when all Primary and Recommended fail.']
+      ];
+      descs.forEach(function(d) {
+        popup.appendChild(el('div', 'info-popup-title', d[0]));
+        popup.appendChild(el('div', 'info-popup-desc', d[1]));
+      });
+      infoBtn.appendChild(popup);
+      infoBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        popup.classList.toggle('show');
+      });
+      priLabel.appendChild(infoBtn);
+      fg2.appendChild(priLabel);
+
+      var priSelect = el('select', 'select');
+      [1, 2, 3].forEach(function(p) {
+        var opt = el('option', '', priorityLabels[p]);
+        opt.value = p;
+        if (p === (full.priority || 2)) opt.selected = true;
+        priSelect.appendChild(opt);
+      });
+      fg2.appendChild(priSelect);
+      modal.appendChild(fg2);
+
+      // config
+      var fg3 = el('div', 'form-group');
+      fg3.appendChild(el('label', 'form-label', 'Config'));
+      var configArea = el('textarea', 'input input-mono');
+      configArea.value = full.config_data;
+      configArea.rows = 10;
+      fg3.appendChild(configArea);
+
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.style.display = 'none';
+      fileInput.addEventListener('change', function() {
+        if (fileInput.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function() { configArea.value = reader.result; };
+          reader.readAsText(fileInput.files[0]);
+        }
+      });
+      fg3.appendChild(fileInput);
+      var uploadBtn = el('button', 'btn btn-sm', 'Upload file');
+      uploadBtn.style.marginTop = '8px';
+      uploadBtn.addEventListener('click', function(e) { e.preventDefault(); fileInput.click(); });
+      fg3.appendChild(uploadBtn);
+      modal.appendChild(fg3);
+
+      // actions
+      var actions = el('div', 'modal-actions');
+      var cancelBtn = el('button', 'btn', 'Cancel');
+      cancelBtn.addEventListener('click', close);
+      var saveBtn = el('button', 'btn btn-success', 'Save');
+      saveBtn.addEventListener('click', function() {
+        var updates = {};
+        if (nameInput.value !== full.name) updates.name = nameInput.value;
+        var newPri = parseInt(priSelect.value);
+        if (newPri !== (full.priority || 2)) updates.priority = newPri;
+        if (configArea.value !== full.config_data) updates.config_data = configArea.value;
+
+        if (Object.keys(updates).length === 0) { close(); return; }
+
+        api.put('/api/tunnels/' + t.id, updates).then(function(r) {
+          if (r.ok === false) { alert(r.error); return; }
+          close();
+          updateTunnels();
+          setTimeout(loadPerTunnelCharts, 500);
+        });
+      });
+      actions.appendChild(cancelBtn);
+      actions.appendChild(saveBtn);
+      modal.appendChild(actions);
+
+      // close popup on any click
+      document.addEventListener('click', function handler() {
+        popup.classList.remove('show');
+        document.removeEventListener('click', handler);
+      });
+    });
   });
 }
 
@@ -490,6 +636,38 @@ function openAddTunnelModal() {
       });
       fg2.appendChild(typeSelect);
       modal.appendChild(fg2);
+
+      // priority
+      var fgPri = el('div', 'form-group');
+      var priLabel = el('div', '');
+      priLabel.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
+      priLabel.appendChild(el('label', 'form-label', 'Priority'));
+      priLabel.firstChild.style.marginBottom = '0';
+      var infoBtn = el('span', 'info-icon', 'i');
+      var popup = el('div', 'info-popup');
+      [['Primary', 'Your own server. Always connected, always preferred even if slower.'],
+       ['Recommended', 'Default choice. Connected and ready. Used when Primary is down.'],
+       ['Backup', 'Not connected until needed. Activates only when all Primary and Recommended fail.']
+      ].forEach(function(d) {
+        popup.appendChild(el('div', 'info-popup-title', d[0]));
+        popup.appendChild(el('div', 'info-popup-desc', d[1]));
+      });
+      infoBtn.appendChild(popup);
+      infoBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        popup.classList.toggle('show');
+      });
+      priLabel.appendChild(infoBtn);
+      fgPri.appendChild(priLabel);
+      var priSelect = el('select', 'select');
+      [1, 2, 3].forEach(function(p) {
+        var opt = el('option', '', priorityLabels[p]);
+        opt.value = p;
+        if (p === 2) opt.selected = true;
+        priSelect.appendChild(opt);
+      });
+      fgPri.appendChild(priSelect);
+      modal.appendChild(fgPri);
 
       var fg3 = el('div', 'form-group');
       fg3.appendChild(el('label', 'form-label', 'Config'));
@@ -527,6 +705,12 @@ function openAddTunnelModal() {
         configArea.placeholder = types[0].config_placeholder;
       }
 
+      // close popup on click outside
+      document.addEventListener('click', function handler() {
+        popup.classList.remove('show');
+        document.removeEventListener('click', handler);
+      });
+
       var actions = el('div', 'modal-actions');
       var saveBtn = el('button', 'btn btn-success', 'Add');
       saveBtn.addEventListener('click', function() {
@@ -534,6 +718,7 @@ function openAddTunnelModal() {
           name: nameInput.value,
           type: typeSelect.value,
           enabled: true,
+          priority: parseInt(priSelect.value),
           config_data: configArea.value
         }).then(function(r) {
           if (r.ok === false) { alert(r.error); return; }
@@ -642,7 +827,10 @@ function loadPerTunnelCharts() {
     latRow.textContent = '';
     spdRow.textContent = '';
 
-    tunnels.forEach(function(t) {
+    sortTunnels(tunnels).forEach(function(t) {
+      // skip standby/disabled -- no data
+      if (t.state === 'standby' || t.state === 'disabled') return;
+
       // latency chart (layout-stats-left)
       api.get('/api/metrics/tunnel/' + t.id + '/latency?period=24h').then(function(data) {
         var c = tunnelColor(t.name);
