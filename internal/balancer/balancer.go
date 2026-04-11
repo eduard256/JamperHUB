@@ -780,9 +780,13 @@ func stopAllTunnels() {
 
 func startOne(srv config.Server) {
 	mu.Lock()
-	if _, exists := tunnels[srv.ID]; exists {
-		mu.Unlock()
-		return
+	if ts, exists := tunnels[srv.ID]; exists {
+		if ts.client != nil && ts.client.Running() {
+			mu.Unlock()
+			return // already running
+		}
+		// exists but not running (was standby) -- remove and re-create
+		delete(tunnels, srv.ID)
 	}
 	mu.Unlock()
 
@@ -906,17 +910,42 @@ func Rebalance() {
 	// sync priorities from config to runtime state
 	mu.Lock()
 	cfg := config.Get()
+	var toStart []config.Server
 	for _, srv := range cfg.Servers {
-		if ts, ok := tunnels[srv.ID]; ok {
-			p := srv.Priority
-			if p < 1 || p > 3 {
-				p = 2
+		ts, ok := tunnels[srv.ID]
+		if !ok {
+			continue
+		}
+		oldPriority := ts.priority
+		p := srv.Priority
+		if p < 1 || p > 3 {
+			p = 2
+		}
+		ts.priority = p
+		ts.cfg = srv
+
+		// was standby (priority 3, not started), now priority 1 or 2 -> need to start
+		if oldPriority == 3 && p <= 2 && ts.client == nil {
+			toStart = append(toStart, srv)
+		}
+
+		// was priority 1 or 2, now priority 3 and not active -> stop and set standby
+		if oldPriority <= 2 && p == 3 && ts.id != activeID {
+			if ts.client != nil && ts.client.Running() {
+				ts.client.Stop()
+				ts.client = nil
+				ts.latency = -1
+				ts.startedAt = time.Time{}
+				log.Printf("[balancer] %s moved to standby (priority 3)", ts.id)
 			}
-			ts.priority = p
-			ts.cfg = srv
 		}
 	}
 	mu.Unlock()
+
+	// start tunnels that moved from standby to active priority
+	for _, srv := range toStart {
+		startOne(srv)
+	}
 
 	selectBest()
 }
