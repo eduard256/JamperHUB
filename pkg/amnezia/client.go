@@ -45,6 +45,10 @@ func (c *Client) Start() error {
 		return nil
 	}
 
+	// Step 0: cleanup stale socket and interface from previous run
+	os.Remove(fmt.Sprintf("%s/%s.sock", socketDir, c.iface))
+	run("ip", "link", "del", c.iface)
+
 	// Step 1: start amneziawg-go in foreground
 	c.cmd = exec.Command(c.binPath, "-f", c.iface)
 	c.cmd.Stdout = os.Stdout

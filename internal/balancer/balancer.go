@@ -353,7 +353,7 @@ func setup(cfg config.Config) {
 }
 
 func networkWatcher() {
-	debounce := 0
+	downCount := 0 // debounce only for network loss
 	for {
 		select {
 		case <-stopCh:
@@ -374,25 +374,26 @@ func networkWatcher() {
 		mu.Unlock()
 
 		if internet && !wasOnline {
-			debounce++
-			if debounce < 2 {
-				continue // debounce: wait one more cycle
-			}
-			debounce = 0
+			// network appeared -- start immediately, no debounce
+			downCount = 0
 			log.Printf("[balancer] internet detected on %s", cfg.Network.Input)
 			store.AddEvent("info", "network_up", "", "internet detected on "+cfg.Network.Input, 0)
 			startAllTunnels()
 		} else if !internet && wasOnline {
-			debounce++
-			if debounce < 2 {
+			// network lost -- debounce to avoid flap
+			downCount++
+			if downCount < 2 {
+				mu.Lock()
+				hasNet = true // don't mark as offline yet
+				mu.Unlock()
 				continue
 			}
-			debounce = 0
+			downCount = 0
 			log.Printf("[balancer] internet lost on %s", cfg.Network.Input)
 			store.AddEvent("warn", "network_down", "", "internet lost on "+cfg.Network.Input, 0)
 			stopAllTunnels()
 		} else {
-			debounce = 0
+			downCount = 0
 		}
 	}
 }
