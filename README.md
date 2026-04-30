@@ -2,11 +2,11 @@
 
 Fault-tolerant VPN gateway with automatic channel balancer. One binary, multiple VPN tunnels, instant failover.
 
-![Dashboard](https://github.com/eduard256/JamperHUB/releases/download/v0.0.1/1.png)
+![Dashboard](https://github.com/eduard256/JamperHUB/releases/download/v0.0.1/1.webp)
 
-![Settings](https://github.com/eduard256/JamperHUB/releases/download/v0.0.1/2.png)
+![Settings](https://github.com/eduard256/JamperHUB/releases/download/v0.0.1/2.webp)
 
-![Latency](https://github.com/eduard256/JamperHUB/releases/download/v0.0.1/3.png)
+![Latency](https://github.com/eduard256/JamperHUB/releases/download/v0.0.1/3.webp)
 
 ## How it works
 
