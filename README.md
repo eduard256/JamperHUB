@@ -64,7 +64,7 @@ Open `http://YOUR_IP:7891` in browser. Setup wizard will guide you through the i
 
 ```bash
 sudo mv jamperhub /usr/local/bin/
-sudo cat > /etc/systemd/system/jamperhub.service << 'EOF'
+sudo tee /etc/systemd/system/jamperhub.service > /dev/null << 'EOF'
 [Unit]
 Description=JamperHUB VPN Gateway
 After=network-online.target
